@@ -1,0 +1,8 @@
+Django>=5.0
+djangorestframework
+django-cors-headers
+channels
+psycopg2-binary
+dj-database-url
+djoser
+Faker>=19.6.0

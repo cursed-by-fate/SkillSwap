@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: skillswap
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    command: >
+      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py shell -c 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email=\"admin@example.com\").exists() or User.objects.create_superuser(email=\"admin@example.com\", password=\"admin\")' && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    working_dir: /app
+    environment:
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
+      DJANGO_SUPERUSER_PASSWORD: admin
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./client
+    command: npm run dev
+    volumes:
+      - ./client:/app
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
