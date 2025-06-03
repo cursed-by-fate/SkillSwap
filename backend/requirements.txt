@@ -6,3 +6,5 @@ psycopg2-binary
 dj-database-url
 djoser
 Faker>=19.6.0
+djoser
+djangorestframework-simplejwt

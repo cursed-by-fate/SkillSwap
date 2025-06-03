@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import dj_database_url
+from datetime import timedelta
+
 
 # --- Базовая директория проекта ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,6 +22,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # сторонние
     "rest_framework",
+    "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "channels",
     "djoser",
@@ -123,9 +127,23 @@ CORS_ALLOW_ALL_ORIGINS = True  # в разработке
 # --- DRF настройка ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+}
+
+# --- Djoser настройки ---
+DJOSER = {
+    "SERIALIZERS": {
+        "user_create": "core.serializers.UserCreateSerializer",
+    },
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }

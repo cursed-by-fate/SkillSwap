@@ -1,11 +1,13 @@
+from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
-from core.models import User
+from core.models import User  # Убедись, что используется твоя кастомная модель
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
+class UserCreateSerializer(BaseUserCreateSerializer):
+    class Meta(BaseUserCreateSerializer.Meta):
         model = User
-        fields = [
+        fields = (
             "id",
             "email",
             "first_name",
@@ -14,5 +16,18 @@ class UserSerializer(serializers.ModelSerializer):
             "location",
             "is_active",
             "date_joined",
-        ]
-        read_only_fields = ["id", "is_active", "date_joined"]
+        )  # Добавь нужные поля
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        refresh = RefreshToken.for_user(user)
+        self.tokens = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+        return user
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["tokens"] = self.tokens
+        return rep

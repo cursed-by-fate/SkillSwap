@@ -23,5 +23,6 @@ router.register(r"notifications", NotificationViewSet, basename="notification")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/auth/", include("core.urls")),
     path("api/", include(router.urls)),
 ]
