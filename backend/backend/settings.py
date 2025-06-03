@@ -42,12 +42,15 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # важно до CommonMiddleware
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # --- URLS ---
 ROOT_URLCONF = "backend.urls"
@@ -113,13 +116,19 @@ USE_TZ = True
 
 # --- Статика ---
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # --- Channels ---
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # если имя сервиса redis в docker-compose
+        },
+    },
+}
 # --- CORS ---
 CORS_ALLOW_ALL_ORIGINS = True  # в разработке
 # CORS_ALLOWED_ORIGINS = ['http://localhost:5173']  # в проде

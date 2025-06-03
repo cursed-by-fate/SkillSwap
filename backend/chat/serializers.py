@@ -9,7 +9,13 @@ class ChatSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Chat
-        fields = ["id", "participant1", "participant2", "last_message_at"]
+        fields = [
+            "id",
+            "participant1",
+            "participant2",
+            "last_message_at",
+            "created_at",
+        ]
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -23,8 +29,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "sender",
             "content",
             "message_type",
-            "is_read",
             "metadata",
+            "is_read",
             "created_at",
         ]
-        read_only_fields = ["id", "sender", "created_at"]

@@ -4,7 +4,7 @@ from rest_framework import serializers
 from core.models import User  # Убедись, что используется твоя кастомная модель
 
 
-class UserCreateSerializer(BaseUserCreateSerializer):
+class UserSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
         fields = (

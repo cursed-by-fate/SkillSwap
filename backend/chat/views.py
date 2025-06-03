@@ -6,6 +6,9 @@ from rest_framework.decorators import action
 from chat.models import Chat, Message
 from chat.serializers import ChatSerializer, MessageSerializer
 
+from rest_framework import viewsets, permissions
+from django.utils import timezone
+
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
@@ -27,7 +30,7 @@ class ChatViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Message.objects.filter(
@@ -35,4 +38,5 @@ class MessageViewSet(viewsets.ModelViewSet):
         ) | Message.objects.filter(chat__participant2=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        message = serializer.save(sender=self.request.user)
+        Chat.objects.filter(id=message.chat.id).update(last_message_at=timezone.now())

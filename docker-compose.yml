@@ -13,19 +13,34 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:6
+    restart: always
+    ports:
+      - "6379:6379"
+
   backend:
     build:
       context: ./backend
     command: >
-      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py shell -c 'from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email=\"admin@example.com\").exists() or User.objects.create_superuser(email=\"admin@example.com\", password=\"admin\")' && python manage.py runserver 0.0.0.0:8000"
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        python manage.py create_default_admin &&
+        daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+      "
     volumes:
       - ./backend:/app
+      - static_volume:/app/staticfiles # ⬅️ собранные статики
     working_dir: /app
     environment:
       DJANGO_SUPERUSER_EMAIL: admin@example.com
       DJANGO_SUPERUSER_PASSWORD: admin
+      DJANGO_SETTINGS_MODULE: backend.settings
     depends_on:
       - db
+      - redis
     ports:
       - "8000:8000"
 
@@ -43,3 +58,4 @@ services:
 
 volumes:
   pgdata:
+  static_volume:
