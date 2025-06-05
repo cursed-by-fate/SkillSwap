@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"; // ✅ добавлено
+import { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
 import useTheme from "@/hooks/useTheme";
 import { useChats, useMessages, useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import ScheduleSessionModal from "@/components/ScheduleSessionModal";
 
 export default function ChatPage() {
-        const { chatId } = useParams(); // ✅ получаем chatId из URL
+        const inputRef = useRef(null);
+        const messagesEndRef = useRef(null);
+
+        const { chatId } = useParams();
         const { theme } = useTheme();
         const { user } = useAuth();
 
         const [selectedChatId, setSelectedChatId] = useState(null);
+        const [wasChatSelected, setWasChatSelected] = useState(false); // ✅ контроль выбора
         const [newMessage, setNewMessage] = useState("");
         const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -18,17 +22,39 @@ export default function ChatPage() {
         const sendMessageMutation = useSendMessage();
         const messagesQuery = useMessages(selectedChatId);
 
-        const chats = chatsQuery.data || [];
+        // ✅ Сортировка чатов по последнему сообщению
+        const chats = (chatsQuery.data || []).slice().sort((a, b) => {
+                const aTime = new Date(a.last_message_at || a.created_at || 0);
+                const bTime = new Date(b.last_message_at || b.created_at || 0);
+                return bTime - aTime;
+        });
+
         const messages = messagesQuery.data || [];
 
-        // ✅ установка нужного чата
+        // ✅ Устанавливаем выбранный чат один раз
         useEffect(() => {
                 if (chatId) {
                         setSelectedChatId(parseInt(chatId));
-                } else if (chats.length > 0) {
+                        setWasChatSelected(true);
+                } else if (chats.length > 0 && !wasChatSelected) {
                         setSelectedChatId(chats[0].id);
+                        setWasChatSelected(true);
                 }
-        }, [chatId, chats]);
+        }, [chatId, chats, wasChatSelected]);
+
+        // ✅ Скролл вниз
+        useEffect(() => {
+                if (messagesEndRef.current) {
+                        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+                }
+        }, [messages]);
+
+        // ✅ Автофокус на input
+        useEffect(() => {
+                if (inputRef.current) {
+                        inputRef.current.focus();
+                }
+        }, [selectedChatId]);
 
         const handleSend = () => {
                 if (!newMessage.trim() || !selectedChatId) return;
@@ -60,7 +86,10 @@ export default function ChatPage() {
                                                 return (
                                                         <div
                                                                 key={chat.id}
-                                                                onClick={() => setSelectedChatId(chat.id)}
+                                                                onClick={() => {
+                                                                        setSelectedChatId(chat.id);
+                                                                        setWasChatSelected(true);
+                                                                }}
                                                                 className={`p-4 flex items-center gap-3 cursor-pointer transition-colors ${selectedChatId === chat.id
                                                                                 ? "bg-gray-200 dark:bg-gray-800"
                                                                                 : "hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -114,10 +143,12 @@ export default function ChatPage() {
                                                         <div>{msg.content}</div>
                                                 </div>
                                         ))}
+                                        <div ref={messagesEndRef} />
                                 </div>
 
                                 <div className="border-t border-gray-300 dark:border-gray-700 p-4 flex gap-2">
                                         <input
+                                                ref={inputRef}
                                                 className="flex-1 p-2 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-black dark:text-white"
                                                 placeholder="Введите сообщение..."
                                                 value={newMessage}
