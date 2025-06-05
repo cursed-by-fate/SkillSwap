@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useTheme from "@/hooks/useTheme";
 import { useChats, useMessages, useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
+import ScheduleSessionModal from "@/components/ScheduleSessionModal"; // 👈 не забудь создать
 
 export default function ChatPage() {
         const { theme } = useTheme();
@@ -9,6 +10,7 @@ export default function ChatPage() {
 
         const [selectedChatId, setSelectedChatId] = useState(null);
         const [newMessage, setNewMessage] = useState("");
+        const [isModalOpen, setIsModalOpen] = useState(false);
 
         const chatsQuery = useChats();
         const sendMessageMutation = useSendMessage();
@@ -34,9 +36,11 @@ export default function ChatPage() {
                 setNewMessage("");
         };
 
-        const getPartner = (chat) => {
-                return chat.participant1.id === user.id ? chat.participant2 : chat.participant1;
-        };
+        const getPartner = (chat) =>
+                chat.participant1.id === user.id ? chat.participant2 : chat.participant1;
+
+        const selectedChat = chats.find((c) => c.id === selectedChatId);
+        const partner = selectedChat ? getPartner(selectedChat) : null;
 
         return (
                 <div className="flex h-[calc(100vh-64px)] transition-colors bg-white text-black dark:bg-gray-900 dark:text-white">
@@ -78,14 +82,19 @@ export default function ChatPage() {
 
                         {/* Окно чата */}
                         <main className="flex-1 flex flex-col">
-                                <div className="border-b border-gray-300 dark:border-gray-700 p-4 font-semibold">
-                                        Чат с{" "}
-                                        {(() => {
-                                                const chat = chats.find((c) => c.id === selectedChatId);
-                                                if (!chat) return "...";
-                                                const partner = getPartner(chat);
-                                                return `${partner.first_name} ${partner.last_name}`;
-                                        })()}
+                                <div className="flex justify-between items-center border-b border-gray-300 dark:border-gray-700 p-4 font-semibold">
+                                        <div>
+                                                Чат с {partner ? `${partner.first_name} ${partner.last_name}` : "..."}
+                                        </div>
+
+                                        {selectedChat && (
+                                                <button
+                                                        onClick={() => setIsModalOpen(true)}
+                                                        className="text-sm text-blue-600 hover:underline"
+                                                >
+                                                        + Запланировать сессию
+                                                </button>
+                                        )}
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -118,6 +127,16 @@ export default function ChatPage() {
                                         </button>
                                 </div>
                         </main>
+
+                        {/* Модалка создания сессии */}
+                        {isModalOpen && selectedChat && (
+                                <ScheduleSessionModal
+                                        isOpen={isModalOpen}
+                                        onClose={() => setIsModalOpen(false)}
+                                        chat={selectedChat}
+                                        currentUser={user}
+                                />
+                        )}
                 </div>
         );
 }

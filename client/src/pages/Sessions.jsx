@@ -1,65 +1,103 @@
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
-import { GraduationCap, MessageCircle, Clock } from "lucide-react";
+import { useSessions } from "@/hooks/useSessions";
+import { Link } from "react-router-dom";
+import { Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SessionsPage() {
-        const { data: sessions = [] } = useQuery({
-                queryKey: ["sessions"],
-                queryFn: async () => {
-                        const res = await api.get("/sessions/");
-                        return res.data;
-                },
-        });
-
-        const grouped = {
-                teach: sessions.filter((s) => s.teacher?.id === s.current_user_id),
-                learn: sessions.filter((s) => s.student?.id === s.current_user_id),
-        };
-
-        const renderSessionCard = (session) => (
-                <div key={session.id} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl shadow">
-                        <h3 className="font-semibold">{session.topic || "Навык"}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {session.start_time?.slice(0, 16).replace("T", " ")} — {session.status}
-                        </p>
-                        <p className="mt-1 text-sm">
-                                С {session.teacher?.username === session.current_user_username
-                                        ? `учеником ${session.student?.username}`
-                                        : `учителем ${session.teacher?.username}`}
-                        </p>
-                </div>
-        );
+        const { data: sessions = [], isLoading, updateSessionStatus } = useSessions();
+        const { user } = useAuth();
 
         return (
-                <div className="min-h-screen p-6 md:p-10 bg-white dark:bg-gray-900 text-black dark:text-white">
+                <div className="min-h-screen bg-white dark:bg-gray-900 text-black dark:text-white p-6 md:p-10">
                         <div className="max-w-5xl mx-auto space-y-6">
                                 <h1 className="text-3xl font-bold">Мои сессии</h1>
 
-                                <section>
-                                        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                                                <GraduationCap /> Я обучаю
-                                        </h2>
-                                        {grouped.teach.length ? (
-                                                <div className="grid md:grid-cols-2 gap-4">
-                                                        {grouped.teach.map(renderSessionCard)}
-                                                </div>
-                                        ) : (
-                                                <p className="text-gray-500 dark:text-gray-400">Нет активных сессий</p>
-                                        )}
-                                </section>
+                                {isLoading ? (
+                                        <p>Загрузка...</p>
+                                ) : sessions.length === 0 ? (
+                                        <p className="text-gray-500 dark:text-gray-400">У вас пока нет сессий</p>
+                                ) : (
+                                        <ul className="space-y-4">
+                                                {sessions.map((session) => {
+                                                        const date = session.scheduled_at
+                                                                ? format(new Date(session.scheduled_at), "dd.MM.yyyy HH:mm")
+                                                                : "Без даты";
 
-                                <section>
-                                        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                                                <Clock /> Я обучаюсь
-                                        </h2>
-                                        {grouped.learn.length ? (
-                                                <div className="grid md:grid-cols-2 gap-4">
-                                                        {grouped.learn.map(renderSessionCard)}
-                                                </div>
-                                        ) : (
-                                                <p className="text-gray-500 dark:text-gray-400">Нет активных сессий</p>
-                                        )}
-                                </section>
+                                                        const isMentor = session.mentor.id === user.id;
+                                                        const partner = isMentor ? session.student : session.mentor;
+
+                                                        const showActions = session.status === "proposed" && !isMentor;
+
+                                                        return (
+                                                                <li
+                                                                        key={session.id}
+                                                                        className="p-4 rounded-xl shadow bg-white dark:bg-gray-800"
+                                                                >
+                                                                        <div className="flex justify-between items-start">
+                                                                                <div className="space-y-2">
+                                                                                        <p className="font-semibold text-lg">{session.title}</p>
+                                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                                                                Навык: {session.skill.name}
+                                                                                        </p>
+                                                                                        <p className="text-sm flex items-center gap-1">
+                                                                                                <Calendar size={14} />
+                                                                                                {date}
+                                                                                        </p>
+                                                                                        <p className="text-sm">
+                                                                                                Статус:{" "}
+                                                                                                <span className="font-medium">{session.status}</span>
+                                                                                        </p>
+                                                                                        <p className="text-sm">
+                                                                                                {isMentor ? "Ученик" : "Ментор"}:{" "}
+                                                                                                <span className="font-medium">
+                                                                                                        {partner.first_name} {partner.last_name}
+                                                                                                </span>
+                                                                                        </p>
+
+                                                                                        {/* Действия (если пользователь — студент и статус предложен) */}
+                                                                                        {showActions && (
+                                                                                                <div className="flex gap-2 pt-2">
+                                                                                                        <button
+                                                                                                                onClick={() =>
+                                                                                                                        updateSessionStatus({
+                                                                                                                                id: session.id,
+                                                                                                                                status: "confirmed",
+                                                                                                                        })
+                                                                                                                }
+                                                                                                                className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1 rounded"
+                                                                                                        >
+                                                                                                                Подтвердить
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                                onClick={() =>
+                                                                                                                        updateSessionStatus({
+                                                                                                                                id: session.id,
+                                                                                                                                status: "cancelled",
+                                                                                                                        })
+                                                                                                                }
+                                                                                                                className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded"
+                                                                                                        >
+                                                                                                                Отменить
+                                                                                                        </button>
+                                                                                                </div>
+                                                                                        )}
+                                                                                </div>
+
+                                                                                <div className="flex flex-col gap-2 items-end">
+                                                                                        <Link
+                                                                                                to="/chat"
+                                                                                                className="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded"
+                                                                                        >
+                                                                                                Перейти в чат
+                                                                                        </Link>
+                                                                                </div>
+                                                                        </div>
+                                                                </li>
+                                                        );
+                                                })}
+                                        </ul>
+                                )}
                         </div>
                 </div>
         );

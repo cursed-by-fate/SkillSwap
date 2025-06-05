@@ -1,10 +1,14 @@
+# usercalendar/serializers.py
+
 from rest_framework import serializers
 from usercalendar.models import CalendarEvent
-from trainingsessions.serializers import SessionSerializer
+from trainingsessions.models import Session  # ✅ Импортируем модель
 
 
 class CalendarEventSerializer(serializers.ModelSerializer):
-    related_session = SessionSerializer()
+    related_session = serializers.PrimaryKeyRelatedField(
+        queryset=Session.objects.all(), required=False, allow_null=True
+    )
 
     class Meta:
         model = CalendarEvent
@@ -18,3 +22,4 @@ class CalendarEventSerializer(serializers.ModelSerializer):
             "event_type",
             "related_session",
         ]
+        read_only_fields = ["user"]

@@ -5,14 +5,16 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
-import Chat from "./pages/Chat";
+// ❌ Удалено: import Chat from "./pages/Chat"; // Конфликтует с ChatPage
 import CalendarPage from "./pages/Calendar";
 import Dashboard from "./pages/Dashboard";
 import UserProfile from "./pages/UserProfile";
 import ReviewsPage from "@/pages/Reviews";
 import NotificationsPage from "@/pages/Notifications";
 import SessionsPage from "@/pages/Sessions";
-import ChatPage from "@/pages/Chat";
+import ChatPage from "@/pages/Chat"; // ✅ Используется как основной чат
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import { useEffect } from "react";
 import useTheme from "@/hooks/useTheme";
@@ -21,7 +23,6 @@ export default function App() {
   const { theme } = useTheme();
 
   useEffect(() => {
-    // Применяем класс "dark" к <html> элементу
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
@@ -37,16 +38,17 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/chat/:id" element={<ChatPage />} />
+        <Route path="/profile/:id" element={<UserProfile />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/chat" element={<ChatPage />} /> {/* ✅ Основной чат */}
+        <Route path="/chat/:id" element={<ChatPage />} /> {/* ✅ По ID */}
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/sessions" element={<SessionsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/profile/:id" element={<UserProfile />} />
+        <Route path="/reviews" element={<ReviewsPage />} />
       </Routes>
+      <ToastContainer position="top-center" autoClose={3000} />
     </BrowserRouter>
   );
 }
