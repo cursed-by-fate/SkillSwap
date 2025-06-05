@@ -1,38 +1,56 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useTheme from "@/hooks/useTheme";
 
 export default function Profile() {
-        const { theme } = useTheme(); // подключаем тему
-        const [user, setUser] = useState({
-                avatar: "https://api.dicebear.com/7.x/initials/svg?seed=SkillSwap",
-                username: "skillswapper",
-                email: "user@example.com",
-                teachSkills: ["Python", "Docker", "Git"],
-                learnSkills: ["Vue", "English"],
-                reviews: [
-                        { id: 1, author: "mentor123", text: "Отличный учитель!" },
-                        { id: 2, author: "learner456", text: "Объясняет понятно и чётко" },
-                ],
-        });
+        const { theme } = useTheme();
 
         const [isEditing, setIsEditing] = useState(false);
+
+        const [user, setUser] = useState(null);
         const [form, setForm] = useState({
-                username: user.username,
-                email: user.email,
-                teach: user.teachSkills.join(", "),
-                learn: user.learnSkills.join(", "),
+                username: "",
+                email: "",
+                teach: "",
+                learn: "",
         });
 
+        // 🧪 Заглушка загрузки пользователя
+        useEffect(() => {
+                const mockUser = {
+                        avatar: "https://api.dicebear.com/7.x/initials/svg?seed=SkillSwap",
+                        username: "skillswapper",
+                        email: "user@example.com",
+                        teachSkills: ["Python", "Docker", "Git"],
+                        learnSkills: ["Vue", "English"],
+                        reviews: [
+                                { id: 1, author: "mentor123", text: "Отличный учитель!" },
+                                { id: 2, author: "learner456", text: "Объясняет понятно и чётко" },
+                        ],
+                };
+
+                setUser(mockUser);
+                setForm({
+                        username: mockUser.username,
+                        email: mockUser.email,
+                        teach: mockUser.teachSkills.join(", "),
+                        learn: mockUser.learnSkills.join(", "),
+                });
+        }, []);
+
         const handleSave = () => {
-                setUser({
+                // 💾 Заглушка сохранения
+                const updatedUser = {
                         ...user,
                         username: form.username,
                         email: form.email,
                         teachSkills: form.teach.split(",").map((s) => s.trim()),
                         learnSkills: form.learn.split(",").map((s) => s.trim()),
-                });
+                };
+                setUser(updatedUser);
                 setIsEditing(false);
         };
+
+        if (!user) return <div className="p-6">Загрузка...</div>;
 
         return (
                 <div className="min-h-screen transition-colors bg-white text-black dark:bg-gray-900 dark:text-white">
@@ -88,7 +106,11 @@ export default function Profile() {
 
                                 {/* Профиль */}
                                 <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col sm:flex-row items-center gap-6">
-                                        <img src={user.avatar} alt="avatar" className="w-24 h-24 rounded-full border" />
+                                        <img
+                                                src={user.avatar}
+                                                alt="avatar"
+                                                className="w-24 h-24 rounded-full border"
+                                        />
                                         <div>
                                                 <h2 className="text-2xl font-bold">{user.username}</h2>
                                                 <p className="text-gray-500 dark:text-gray-300">{user.email}</p>

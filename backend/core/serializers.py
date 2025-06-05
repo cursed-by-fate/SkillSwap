@@ -1,22 +1,24 @@
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
+from djoser.serializers import UserSerializer as BaseUserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import serializers
-from core.models import User  # Убедись, что используется твоя кастомная модель
+from core.models import User
 
 
-class UserSerializer(BaseUserCreateSerializer):
+# ✅ Для регистрации пользователя
+class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
         fields = (
             "id",
             "email",
+            "password",
             "first_name",
             "last_name",
+            "profile_image_url",
             "bio",
             "location",
-            "is_active",
-            "date_joined",
-        )  # Добавь нужные поля
+            "time_zone",
+        )
 
     def create(self, validated_data):
         user = super().create(validated_data)
@@ -29,5 +31,25 @@ class UserSerializer(BaseUserCreateSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep["tokens"] = self.tokens
+        rep["tokens"] = getattr(self, "tokens", None)
         return rep
+
+
+# ✅ Для получения информации о текущем пользователе
+class UserSerializer(BaseUserSerializer):
+    class Meta(BaseUserSerializer.Meta):
+        model = User
+        fields = (
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "profile_image_url",
+            "bio",
+            "location",
+            "time_zone",
+            "is_active",
+            "is_staff",
+            "created_at",
+            "updated_at",
+        )

@@ -1,25 +1,16 @@
+// ✅ Обновлённый Navbar.jsx с useAuth
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { isAuthenticated, logout } from "@/auth";
 import { Moon, Sun } from "lucide-react";
 import useTheme from "@/hooks/useTheme";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Navbar() {
         const location = useLocation();
         const navigate = useNavigate();
         const { theme, toggleTheme } = useTheme();
+        const { user, logout, isLoading } = useAuth();
         const [mobileOpen, setMobileOpen] = useState(false);
-        const [auth, setAuth] = useState(isAuthenticated());
-
-        useEffect(() => {
-                setAuth(isAuthenticated());
-        }, [location]);
-
-        const handleLogout = () => {
-                logout();
-                setAuth(false);
-                navigate("/login");
-        };
 
         const menuItems = [
                 { label: "Главная", path: "/dashboard" },
@@ -29,15 +20,20 @@ export default function Navbar() {
                 { label: "Профиль", path: "/profile" },
         ];
 
+        const handleLogout = () => {
+                logout();
+                navigate("/login");
+        };
+
         return (
                 <nav className="bg-gray-900 dark:bg-gray-900 text-white p-4 shadow-md sticky top-0 z-50">
                         <div className="max-w-7xl mx-auto flex justify-between items-center">
-                                {/* Логотип */}
                                 <div className="text-xl font-bold">
-                                        <Link to="/" className="font-bold text-xl text-white">SkillSwap</Link>
+                                        <Link to="/" className="font-bold text-xl text-white">
+                                                SkillSwap
+                                        </Link>
                                 </div>
 
-                                {/* Десктоп меню */}
                                 <div className="hidden md:flex space-x-6 items-center">
                                         {menuItems.map((item) => (
                                                 <Link
@@ -49,7 +45,6 @@ export default function Navbar() {
                                                 </Link>
                                         ))}
 
-                                        {/* Кнопка темы */}
                                         <button
                                                 onClick={toggleTheme}
                                                 className="hover:text-blue-400 transition"
@@ -58,7 +53,7 @@ export default function Navbar() {
                                                 {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                                         </button>
 
-                                        {auth ? (
+                                        {!isLoading && user ? (
                                                 <button
                                                         onClick={handleLogout}
                                                         className="ml-4 text-red-400 hover:text-red-500"
@@ -67,19 +62,21 @@ export default function Navbar() {
                                                 </button>
                                         ) : (
                                                 <>
-                                                        <Link to="/login" className="ml-4 hover:text-blue-400">Вход</Link>
-                                                        <Link to="/register" className="ml-2 hover:text-blue-400">Регистрация</Link>
+                                                        <Link to="/login" className="ml-4 hover:text-blue-400">
+                                                                Вход
+                                                        </Link>
+                                                        <Link to="/register" className="ml-2 hover:text-blue-400">
+                                                                Регистрация
+                                                        </Link>
                                                 </>
                                         )}
                                 </div>
 
-                                {/* Мобильное меню (бургер) */}
                                 <div className="md:hidden">
                                         <button onClick={() => setMobileOpen(!mobileOpen)}>☰</button>
                                 </div>
                         </div>
 
-                        {/* Мобильное меню */}
                         {mobileOpen && (
                                 <div className="md:hidden mt-2 space-y-2 px-4">
                                         {menuItems.map((item) => (
@@ -93,7 +90,6 @@ export default function Navbar() {
                                                 </Link>
                                         ))}
 
-                                        {/* Кнопка темы (моб) */}
                                         <button
                                                 onClick={() => {
                                                         toggleTheme();
@@ -104,7 +100,7 @@ export default function Navbar() {
                                                 {theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                                         </button>
 
-                                        {auth ? (
+                                        {!isLoading && user ? (
                                                 <button
                                                         onClick={() => {
                                                                 handleLogout();

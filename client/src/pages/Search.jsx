@@ -1,29 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useTheme from "@/hooks/useTheme";
+import { Link } from "react-router-dom";
+
+// 🔧 Заглушка пользователей
+const mockUsers = [
+        {
+                id: "1",
+                username: "mentor123",
+                email: "mentor@example.com",
+                avatar: "",
+                teachSkills: ["Python", "Git"],
+                learnSkills: ["React", "English"],
+        },
+        {
+                id: "2",
+                username: "learner456",
+                email: "learner@example.com",
+                avatar: "",
+                teachSkills: ["JavaScript", "CSS"],
+                learnSkills: ["Docker", "PostgreSQL"],
+        },
+];
 
 export default function Search() {
         const { theme } = useTheme();
         const [query, setQuery] = useState("");
+        const [users, setUsers] = useState([]);
+        const [isLoading, setIsLoading] = useState(true);
+        const [isError, setIsError] = useState(false);
 
-        const [users] = useState([
-                {
-                        id: 1,
-                        avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Alice",
-                        username: "alice_dev",
-                        teach: ["JavaScript", "React"],
-                        learn: ["Python", "Docker"],
-                },
-                {
-                        id: 2,
-                        avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Bob",
-                        username: "bob42",
-                        teach: ["Python", "FastAPI"],
-                        learn: ["Vue", "Tailwind"],
-                },
-        ]);
+        useEffect(() => {
+                // Эмуляция загрузки
+                setTimeout(() => {
+                        setUsers(mockUsers);
+                        setIsLoading(false);
+                }, 800);
+        }, []);
 
         const filtered = users.filter((u) =>
-                u.username.toLowerCase().includes(query.toLowerCase())
+                u.username.toLowerCase().includes(query.toLowerCase()) ||
+                u.email?.toLowerCase().includes(query.toLowerCase()) ||
+                u.teachSkills?.some((s) => s.toLowerCase().includes(query.toLowerCase())) ||
+                u.learnSkills?.some((s) => s.toLowerCase().includes(query.toLowerCase()))
         );
 
         return (
@@ -39,6 +57,9 @@ export default function Search() {
                                         onChange={(e) => setQuery(e.target.value)}
                                 />
 
+                                {isLoading && <p>Загрузка пользователей...</p>}
+                                {isError && <p className="text-red-500">Ошибка загрузки</p>}
+
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filtered.map((user) => (
                                                 <div
@@ -47,7 +68,7 @@ export default function Search() {
                                                 >
                                                         <div className="flex items-center gap-4 mb-4">
                                                                 <img
-                                                                        src={user.avatar}
+                                                                        src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`}
                                                                         alt={user.username}
                                                                         className="w-14 h-14 rounded-full border"
                                                                 />
@@ -59,7 +80,7 @@ export default function Search() {
                                                         <div className="mb-2">
                                                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Обучает:</p>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                        {user.teach.map((s) => (
+                                                                        {user.teachSkills.map((s) => (
                                                                                 <span
                                                                                         key={s}
                                                                                         className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs"
@@ -73,7 +94,7 @@ export default function Search() {
                                                         <div className="mb-4">
                                                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Хочет изучить:</p>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                        {user.learn.map((s) => (
+                                                                        {user.learnSkills.map((s) => (
                                                                                 <span
                                                                                         key={s}
                                                                                         className="bg-purple-600 text-white px-2 py-0.5 rounded text-xs"
@@ -84,9 +105,17 @@ export default function Search() {
                                                                 </div>
                                                         </div>
 
-                                                        <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">
-                                                                Написать
-                                                        </button>
+                                                        <div className="flex flex-col gap-2">
+                                                                <Link
+                                                                        to={`/profile/${user.id}`}
+                                                                        className="w-full text-center bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-black dark:text-white py-2 rounded"
+                                                                >
+                                                                        Профиль
+                                                                </Link>
+                                                                <button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">
+                                                                        Написать
+                                                                </button>
+                                                        </div>
                                                 </div>
                                         ))}
                                 </div>

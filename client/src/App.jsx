@@ -8,6 +8,7 @@ import Search from "./pages/Search";
 import Chat from "./pages/Chat";
 import CalendarPage from "./pages/Calendar";
 import Dashboard from "./pages/Dashboard";
+import UserProfile from "./pages/UserProfile";
 
 import { useEffect } from "react";
 import useTheme from "@/hooks/useTheme";
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile/:id" element={<UserProfile />} />
       </Routes>
     </BrowserRouter>
   );

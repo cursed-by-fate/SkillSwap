@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
@@ -7,11 +7,11 @@ export default function Register() {
         const [password, setPassword] = useState("");
         const [rePassword, setRePassword] = useState("");
         const [error, setError] = useState("");
-        const [success, setSuccess] = useState(false);
+        const [status, setStatus] = useState("idle"); // idle | pending | success | error
 
         const navigate = useNavigate();
 
-        const handleRegister = async (e) => {
+        const handleRegister = (e) => {
                 e.preventDefault();
                 setError("");
 
@@ -20,30 +20,20 @@ export default function Register() {
                         return;
                 }
 
-                try {
-                        const res = await fetch("http://localhost:8000/api/auth/users/", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ email, username, password, re_password: rePassword }),
-                        });
+                setStatus("pending");
 
-                        const data = await res.json();
-
-                        if (!res.ok) {
-                                const detail =
-                                        data.email?.[0] ||
-                                        data.username?.[0] ||
-                                        data.password?.[0] ||
-                                        data.detail ||
-                                        "Ошибка регистрации";
-                                throw new Error(detail);
+                // 🔧 Имитация запроса
+                setTimeout(() => {
+                        if (email && username && password.length >= 4) {
+                                localStorage.setItem("accessToken", "mock-access");
+                                localStorage.setItem("refreshToken", "mock-refresh");
+                                setStatus("success");
+                                setTimeout(() => navigate("/login"), 2000);
+                        } else {
+                                setError("Ошибка регистрации. Проверьте данные.");
+                                setStatus("error");
                         }
-
-                        setSuccess(true);
-                        setTimeout(() => navigate("/login"), 1500);
-                } catch (err) {
-                        setError(err.message);
-                }
+                }, 1000);
         };
 
         return (
@@ -51,8 +41,15 @@ export default function Register() {
                         <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-gray-900 dark:text-white">
                                 <h2 className="text-3xl font-bold mb-6 text-center">Регистрация</h2>
 
-                                {error && <div className="text-red-500 mb-3 text-center">{error}</div>}
-                                {success && <div className="text-green-500 mb-3 text-center">Успешно! Перенаправление...</div>}
+                                {error && (
+                                        <div className="text-red-500 mb-3 text-center">{error}</div>
+                                )}
+
+                                {status === "success" && (
+                                        <div className="text-green-500 mb-3 text-center">
+                                                Успешно! Перенаправление...
+                                        </div>
+                                )}
 
                                 <form onSubmit={handleRegister} className="space-y-4">
                                         <Input
@@ -79,12 +76,12 @@ export default function Register() {
                                                 value={rePassword}
                                                 onChange={(e) => setRePassword(e.target.value)}
                                         />
-
                                         <button
                                                 type="submit"
+                                                disabled={status === "pending"}
                                                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold transition"
                                         >
-                                                Зарегистрироваться
+                                                {status === "pending" ? "Регистрируем..." : "Зарегистрироваться"}
                                         </button>
                                 </form>
 

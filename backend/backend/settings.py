@@ -130,8 +130,20 @@ CHANNEL_LAYERS = {
     },
 }
 # --- CORS ---
-CORS_ALLOW_ALL_ORIGINS = True  # в разработке
-# CORS_ALLOWED_ORIGINS = ['http://localhost:5173']  # в проде
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # 👈 точный адрес фронтенда
+]
+
+# НЕ ставь '*' если CORS_ALLOW_CREDENTIALS = True
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-Requested-With",
+    "Content-Type",
+    "Authorization",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # --- DRF настройка ---
 REST_FRAMEWORK = {
@@ -147,10 +159,16 @@ REST_FRAMEWORK = {
 DJOSER = {
     "SERIALIZERS": {
         "user_create": "core.serializers.UserCreateSerializer",
+        "user": "core.serializers.UserSerializer",
+        "current_user": "core.serializers.UserSerializer",
     },
+    "LOGIN_FIELD": "email",
+    "USER_CREATE_PASSWORD_RETYPE": False,
 }
 
 SIMPLE_JWT = {
+    "LOGIN_FIELD": "email",
+    "USER_CREATE_PASSWORD_RETYPE": False,
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),
