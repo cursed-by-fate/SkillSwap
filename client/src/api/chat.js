@@ -1,16 +1,33 @@
-import api from "@/lib/axios";
+// /api/chat.js
+export async function getChats() {
+        const res = await fetch("/api/chats/", {
+                headers: {
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+        });
+        if (!res.ok) throw new Error("Не удалось загрузить чаты");
+        return res.json();
+}
 
-export const fetchChats = async () => {
-        const res = await api.get("/chat/");
-        return res.data;
-};
+export async function getMessages(chatId) {
+        const res = await fetch(`/api/chats/${chatId}/messages/`, {
+                headers: {
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+        });
+        if (!res.ok) throw new Error("Не удалось загрузить сообщения");
+        return res.json();
+}
 
-export const fetchMessages = async (chatId) => {
-        const res = await api.get(`/chat/${chatId}/messages/`);
-        return res.data;
-};
-
-export const sendMessage = async (chatId, data) => {
-        const res = await api.post(`/chat/${chatId}/messages/`, data);
-        return res.data;
-};
+export async function sendMessage({ chat, content, message_type = "text" }) {
+        const res = await fetch("/api/messages/", {
+                method: "POST",
+                headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+                body: JSON.stringify({ chat, content, message_type }),
+        });
+        if (!res.ok) throw new Error("Ошибка при отправке сообщения");
+        return res.json();
+}
