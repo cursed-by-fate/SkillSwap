@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom"; // ✅ добавлено
 import useTheme from "@/hooks/useTheme";
 import { useChats, useMessages, useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
-import ScheduleSessionModal from "@/components/ScheduleSessionModal"; // 👈 не забудь создать
+import ScheduleSessionModal from "@/components/ScheduleSessionModal";
 
 export default function ChatPage() {
+        const { chatId } = useParams(); // ✅ получаем chatId из URL
         const { theme } = useTheme();
         const { user } = useAuth();
 
@@ -19,11 +21,14 @@ export default function ChatPage() {
         const chats = chatsQuery.data || [];
         const messages = messagesQuery.data || [];
 
+        // ✅ установка нужного чата
         useEffect(() => {
-                if (!selectedChatId && chats.length > 0) {
+                if (chatId) {
+                        setSelectedChatId(parseInt(chatId));
+                } else if (chats.length > 0) {
                         setSelectedChatId(chats[0].id);
                 }
-        }, [chats, selectedChatId]);
+        }, [chatId, chats]);
 
         const handleSend = () => {
                 if (!newMessage.trim() || !selectedChatId) return;

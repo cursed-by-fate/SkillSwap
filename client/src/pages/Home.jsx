@@ -1,4 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useSessions } from "@/hooks/useSessions";
+
 import {
         GraduationCap,
         Star,
@@ -7,12 +10,13 @@ import {
         Search,
         Calendar,
         Users,
-        Plus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Home() {
         const { user, isLoading } = useAuth();
+        const { unreadCount } = useNotifications();
+        const { data: sessions = [] } = useSessions();
 
         if (isLoading) {
                 return <div className="p-6">Загрузка...</div>;
@@ -23,6 +27,12 @@ export default function Home() {
                 user?.username?.trim() ||
                 user?.email?.split("@")[0] ||
                 "Пользователь";
+
+        const completedSessions = sessions.filter((s) => s.status === "completed");
+        const completedCount = completedSessions.length;
+
+        const reviews = user?.reviews || [];
+        const reviewCount = reviews.length;
 
         return (
                 <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6 md:p-10 transition-colors">
@@ -42,16 +52,32 @@ export default function Home() {
                                 {/* Быстрые действия */}
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <ActionItem icon={<Search />} text="Поиск" to="/search" />
-                                        <ActionItem icon={<Users />} text="Пользователи" to="/profile" />
+                                        <ActionItem icon={<Users />} text="Профиль" to="/profile" />
                                         <ActionItem icon={<MessageCircle />} text="Чат" to="/chat" />
                                         <ActionItem icon={<Calendar />} text="Календарь" to="/calendar" />
                                 </div>
 
-                                {/* Статистика (заглушки) */}
+                                {/* Статистика */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <StatCard icon={<Star />} label="Отзывы" value="★ 4.8 / 5" />
-                                        <StatCard icon={<Bell />} label="Уведомления" value="3 новых" />
-                                        <StatCard icon={<GraduationCap />} label="Сессии" value="12 проведено" />
+                                        <StatCard
+                                                icon={<Star />}
+                                                label="Отзывы"
+                                                value={`${reviewCount} отзывов`}
+                                        />
+                                        <StatCard
+                                                icon={<Bell />}
+                                                label="Уведомления"
+                                                value={
+                                                        unreadCount > 0
+                                                                ? `${unreadCount} новых`
+                                                                : "Нет новых"
+                                                }
+                                        />
+                                        <StatCard
+                                                icon={<GraduationCap />}
+                                                label="Сессии"
+                                                value={`${completedCount} завершено`}
+                                        />
                                 </div>
 
                                 {/* Описание */}

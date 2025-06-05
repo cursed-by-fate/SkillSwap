@@ -1,11 +1,11 @@
+# reviews/views.py
 from rest_framework import viewsets
 from reviews.models import Review
-from reviews.serializers import ReviewSerializer
+from reviews.serializers import ReviewReadSerializer, ReviewWriteSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -14,5 +14,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
             reviewee=user
         )
 
+    def get_serializer_class(self):
+        if self.request.method in ["POST", "PUT", "PATCH"]:
+            return ReviewWriteSerializer
+        return ReviewReadSerializer
+
     def perform_create(self, serializer):
-        serializer.save(reviewer=self.request.user)
+        serializer.save()

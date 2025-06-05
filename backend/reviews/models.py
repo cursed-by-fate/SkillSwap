@@ -6,8 +6,16 @@ from trainingsessions.models import Session
 
 
 class Review(models.Model):
+    class Meta:
+        unique_together = (
+            "reviewer",
+            "session",
+        )  # ❗ Один отзыв от одного пользователя на одну сессию
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, related_name="reviews"
+    )
     reviewer = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="reviews_given"
     )

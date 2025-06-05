@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { Moon, Sun, Bell } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Moon, Sun, Bell, Home, Search, MessageCircle, Calendar, User, Star, ClipboardList } from "lucide-react";
 import useTheme from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
-import NotificationsDropdown from "@/components/NotificationsDropdown"; // 👈 не забудь создать этот файл
+import NotificationsDropdown from "@/components/NotificationsDropdown";
+import clsx from "classnames";
 
 export default function Navbar() {
         const location = useLocation();
@@ -16,11 +17,13 @@ export default function Navbar() {
         const [dropdownOpen, setDropdownOpen] = useState(false);
 
         const menuItems = [
-                { label: "Главная", path: "/dashboard" },
-                { label: "Поиск", path: "/search" },
-                { label: "Чаты", path: "/chat" },
-                { label: "Календарь", path: "/calendar" },
-                { label: "Профиль", path: "/profile" },
+                { label: "Главная", path: "/dashboard", icon: <Home size={18} /> },
+                { label: "Поиск", path: "/search", icon: <Search size={18} /> },
+                { label: "Чаты", path: "/chat", icon: <MessageCircle size={18} /> },
+                { label: "Календарь", path: "/calendar", icon: <Calendar size={18} /> },
+                { label: "Профиль", path: "/profile", icon: <User size={18} /> },
+                { label: "Отзывы", path: "/reviews", icon: <Star size={18} /> },
+                { label: "Мои сессии", path: "/sessions", icon: <ClipboardList size={18} /> },
         ];
 
         const handleLogout = () => {
@@ -28,7 +31,6 @@ export default function Navbar() {
                 navigate("/login");
         };
 
-        // Закрытие дропдауна по клику вне
         useEffect(() => {
                 const close = (e) => {
                         if (!e.target.closest("#notif-bell")) setDropdownOpen(false);
@@ -38,24 +40,24 @@ export default function Navbar() {
         }, []);
 
         return (
-                <nav className="bg-gray-900 dark:bg-gray-900 text-white p-4 shadow-md sticky top-0 z-50">
+                <nav className="bg-gray-900 text-white p-4 shadow-md sticky top-0 z-50">
                         <div className="max-w-7xl mx-auto flex justify-between items-center">
-                                {/* Логотип */}
-                                <div className="text-xl font-bold">
-                                        <Link to="/" className="font-bold text-xl text-white">
-                                                SkillSwap
-                                        </Link>
-                                </div>
+                                <Link to="/" className="font-bold text-xl text-white">
+                                        SkillSwap
+                                </Link>
 
-                                {/* Меню */}
-                                <div className="hidden md:flex space-x-6 items-center">
-                                        {menuItems.map((item) => (
+                                <div className="hidden md:flex items-center space-x-6">
+                                        {menuItems.map(({ label, path, icon }) => (
                                                 <Link
-                                                        key={item.path}
-                                                        to={item.path}
-                                                        className={`hover:text-blue-400 ${location.pathname === item.path ? "text-blue-400" : ""}`}
+                                                        key={path}
+                                                        to={path}
+                                                        className={clsx(
+                                                                "flex items-center gap-1 hover:text-blue-400 transition",
+                                                                location.pathname === path && "text-blue-400"
+                                                        )}
                                                 >
-                                                        {item.label}
+                                                        {icon}
+                                                        {label}
                                                 </Link>
                                         ))}
 
@@ -77,7 +79,7 @@ export default function Navbar() {
                                                 )}
                                         </div>
 
-                                        {/* 🌗 Переключение темы */}
+                                        {/* 🌗 Тема */}
                                         <button
                                                 onClick={toggleTheme}
                                                 className="hover:text-blue-400 transition"
@@ -106,7 +108,7 @@ export default function Navbar() {
                                         )}
                                 </div>
 
-                                {/* Mobile burger */}
+                                {/* Бургер для мобильных */}
                                 <div className="md:hidden">
                                         <button onClick={() => setMobileOpen(!mobileOpen)}>☰</button>
                                 </div>
@@ -115,18 +117,20 @@ export default function Navbar() {
                         {/* Мобильное меню */}
                         {mobileOpen && (
                                 <div className="md:hidden mt-2 space-y-2 px-4">
-                                        {menuItems.map((item) => (
+                                        {menuItems.map(({ label, path }) => (
                                                 <Link
-                                                        key={item.path}
-                                                        to={item.path}
-                                                        className="block hover:text-blue-400"
+                                                        key={path}
+                                                        to={path}
                                                         onClick={() => setMobileOpen(false)}
+                                                        className={clsx(
+                                                                "block hover:text-blue-400 transition",
+                                                                location.pathname === path && "text-blue-400"
+                                                        )}
                                                 >
-                                                        {item.label}
+                                                        {label}
                                                 </Link>
                                         ))}
 
-                                        {/* Мобильный переключатель темы */}
                                         <button
                                                 onClick={() => {
                                                         toggleTheme();
@@ -137,7 +141,6 @@ export default function Navbar() {
                                                 {theme === "dark" ? "Светлая тема" : "Тёмная тема"}
                                         </button>
 
-                                        {/* Мобильный выход / вход */}
                                         {!isLoading && user ? (
                                                 <button
                                                         onClick={() => {
@@ -150,20 +153,8 @@ export default function Navbar() {
                                                 </button>
                                         ) : (
                                                 <>
-                                                        <Link
-                                                                to="/login"
-                                                                className="block hover:text-blue-400"
-                                                                onClick={() => setMobileOpen(false)}
-                                                        >
-                                                                Вход
-                                                        </Link>
-                                                        <Link
-                                                                to="/register"
-                                                                className="block hover:text-blue-400"
-                                                                onClick={() => setMobileOpen(false)}
-                                                        >
-                                                                Регистрация
-                                                        </Link>
+                                                        <Link to="/login" className="block hover:text-blue-400">Вход</Link>
+                                                        <Link to="/register" className="block hover:text-blue-400">Регистрация</Link>
                                                 </>
                                         )}
                                 </div>

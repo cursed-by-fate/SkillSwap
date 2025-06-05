@@ -9,9 +9,16 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSessions } from "@/hooks/useSessions";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useChats } from "@/hooks/useChat";
+import { format } from "date-fns";
 
 export default function Dashboard() {
         const { user, isLoading } = useAuth();
+        const { data: sessions = [] } = useSessions();
+        const { unreadCount } = useNotifications();
+        const { chats = [] } = useChats();
 
         if (isLoading || !user) {
                 return <div className="p-6">Загрузка...</div>;
@@ -22,6 +29,14 @@ export default function Dashboard() {
                 user.username?.trim() ||
                 user.email?.split("@")[0] ||
                 "Пользователь";
+
+        const totalSessions = sessions.length;
+        const upcomingSessions = sessions
+                .filter((s) => s.status === "confirmed" && new Date(s.scheduled_at) > new Date())
+                .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+                .slice(0, 3);
+
+        const reviewCount = user.reviews?.length || 0;
 
         return (
                 <div className="p-6 md:p-10 space-y-8 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen transition-colors">
@@ -35,10 +50,14 @@ export default function Dashboard() {
 
                         {/* Статистика */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                                <StatCard icon={<GraduationCap />} label="Всего сессий" value="12" />
-                                <StatCard icon={<Star />} label="Рейтинг" value="★ 4.8" />
-                                <StatCard icon={<MessageCircle />} label="Чатов активно" value="3" />
-                                <StatCard icon={<Bell />} label="Уведомлений" value="5" />
+                                <StatCard icon={<GraduationCap />} label="Всего сессий" value={totalSessions} />
+                                <StatCard icon={<Star />} label="Отзывы" value={`${reviewCount} отзывов`} />
+                                <StatCard icon={<MessageCircle />} label="Чатов активно" value={chats.length} />
+                                <StatCard
+                                        icon={<Bell />}
+                                        label="Уведомлений"
+                                        value={unreadCount > 0 ? `${unreadCount} новых` : "Нет новых"}
+                                />
                         </div>
 
                         {/* Быстрые действия и события */}
@@ -50,16 +69,31 @@ export default function Dashboard() {
                                         <ActionItem icon={<Edit />} text="Обновить профиль" to="/profile" />
                                 </div>
 
-                                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col justify-between">
-                                        <div>
-                                                <h2 className="text-xl font-semibold mb-4">Предстоящие события</h2>
-                                                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow space-y-4">
+                                        <h2 className="text-xl font-semibold">Предстоящие события</h2>
+                                        {upcomingSessions.length === 0 ? (
+                                                <p className="text-gray-600 dark:text-gray-400">
                                                         Пока нет запланированных встреч.
                                                 </p>
-                                        </div>
+                                        ) : (
+                                                <ul className="space-y-2">
+                                                        {upcomingSessions.map((session) => (
+                                                                <li
+                                                                        key={session.id}
+                                                                        className="text-gray-800 dark:text-gray-200"
+                                                                >
+                                                                        <strong>{session.title}</strong> —{" "}
+                                                                        {format(
+                                                                                new Date(session.scheduled_at),
+                                                                                "dd.MM.yyyy HH:mm"
+                                                                        )}
+                                                                </li>
+                                                        ))}
+                                                </ul>
+                                        )}
                                         <Link
                                                 to="/calendar"
-                                                className="self-start text-blue-600 dark:text-blue-400 hover:underline"
+                                                className="inline-block text-blue-600 dark:text-blue-400 hover:underline"
                                         >
                                                 Перейти в календарь
                                         </Link>

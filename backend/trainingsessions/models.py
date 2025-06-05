@@ -6,10 +6,11 @@ from skills.models import Skill
 
 class Session(models.Model):
     STATUS_CHOICES = (
-        ("proposed", "Proposed"),
-        ("confirmed", "Confirmed"),
-        ("completed", "Completed"),
-        ("cancelled", "Cancelled"),
+        ("proposed", "Предложена"),
+        ("waiting", "Ожидание"),  # ← добавить это
+        ("confirmed", "Подтверждена"),
+        ("completed", "Завершена"),
+        ("cancelled", "Отменена"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

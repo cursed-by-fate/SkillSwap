@@ -1,0 +1,90 @@
+/* Убираем стандартные рамки и делаем фон прозрачным */
+.rbc-calendar {
+        background-color: transparent;
+        border: none;
+        font-family: inherit;
+}
+
+/* Заголовки дней */
+.rbc-header {
+        background-color: transparent;
+        border-bottom: 1px solid #e5e7eb;
+        /* Tailwind: border-gray-200 */
+        padding: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+        /* text-gray-700 */
+}
+
+.dark .rbc-header {
+        border-color: #374151;
+        /* border-gray-700 */
+        color: #d1d5db;
+        /* text-gray-300 */
+}
+
+/* Ячейки с датами */
+.rbc-day-bg {
+        border: none;
+}
+
+.rbc-today {
+        background-color: #dbebff !important;
+        /* Светло-голубой */
+}
+
+.dark .rbc-today {
+        background-color: #1f2937 !important;
+        /* gray-800 */
+}
+
+/* Стили навигации и заголовков */
+.rbc-toolbar {
+        margin-bottom: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+}
+
+.rbc-toolbar button {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        padding: 0.4rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+}
+
+.rbc-toolbar button:hover {
+        background-color: #1d4ed8;
+}
+
+.rbc-toolbar-label {
+        font-size: 1.125rem;
+        color: #111827;
+}
+
+.dark .rbc-toolbar-label {
+        color: #f9fafb;
+}
+
+/* Убираем стандартные стили событий — заменяются Tailwind в eventPropGetter */
+.rbc-event {
+        background-color: transparent !important;
+        border: none;
+        padding: 0 !important;
+}
+
+.rbc-event-content {
+        color: white;
+        font-weight: 500;
+        padding: 2px 6px;
+}
+
+.dark .rbc-event-content {
+        color: white;
+}
