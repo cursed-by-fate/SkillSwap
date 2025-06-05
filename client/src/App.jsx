@@ -12,6 +12,7 @@ import UserProfile from "./pages/UserProfile";
 import ReviewsPage from "@/pages/Reviews";
 import NotificationsPage from "@/pages/Notifications";
 import SessionsPage from "@/pages/Sessions";
+import ChatPage from "@/pages/Chat";
 
 import { useEffect } from "react";
 import useTheme from "@/hooks/useTheme";
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/search" element={<Search />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/reviews" element={<ReviewsPage />} />

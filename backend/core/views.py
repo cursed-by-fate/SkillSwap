@@ -17,7 +17,8 @@ class UserViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return User.objects.filter(id=self.request.user.id)
+        # ✅ Теперь возвращаем всех пользователей
+        return User.objects.all()
 
     def get_object(self):
         return self.request.user

@@ -1,33 +1,30 @@
-// /api/chat.js
+// src/api/chat.js
+import axios from "@/lib/axios";
+
+// ✅ Получение всех чатов текущего пользователя
 export async function getChats() {
-        const res = await fetch("/api/chats/", {
-                headers: {
-                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                },
-        });
-        if (!res.ok) throw new Error("Не удалось загрузить чаты");
-        return res.json();
+        const response = await axios.get("/chats/");
+        return response.data;
 }
 
+// ✅ Получение всех сообщений в чате по ID
 export async function getMessages(chatId) {
-        const res = await fetch(`/api/chats/${chatId}/messages/`, {
-                headers: {
-                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                },
-        });
-        if (!res.ok) throw new Error("Не удалось загрузить сообщения");
-        return res.json();
+        const response = await axios.get(`/chats/${chatId}/messages/`);
+        return response.data;
 }
 
+// ✅ Отправка нового сообщения
 export async function sendMessage({ chat, content, message_type = "text" }) {
-        const res = await fetch("/api/messages/", {
-                method: "POST",
-                headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-                },
-                body: JSON.stringify({ chat, content, message_type }),
+        const response = await axios.post("/messages/", {
+                chat,
+                content,
+                message_type,
         });
-        if (!res.ok) throw new Error("Ошибка при отправке сообщения");
-        return res.json();
+        return response.data;
+}
+
+// ✅ Получение или создание чата с другим пользователем
+export async function getOrCreateChat(partnerId) {
+        const response = await axios.post("/chats/", { partner_id: partnerId });
+        return response.data;
 }
