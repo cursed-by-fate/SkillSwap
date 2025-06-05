@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { updateProfile } from "@/api/auth";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Profile() {
         const { user } = useAuth();
@@ -68,8 +70,10 @@ export default function Profile() {
                         await updateProfile(payload);
                         await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
                         setIsEditing(false);
+                        toast.success("Профиль успешно обновлён");
                 } catch (err) {
                         console.error("Ошибка при обновлении профиля", err);
+                        toast.error("Ошибка при обновлении профиля");
                 }
         };
 
@@ -77,43 +81,22 @@ export default function Profile() {
 
         return (
                 <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6 md:p-10 transition-colors">
-                        <div className="max-w-3xl mx-auto space-y-6">
+                        <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar theme="colored" />
+                        <div className="max-w-4xl mx-auto space-y-8">
                                 {isEditing && (
-                                        <Modal title="Редактировать профиль" onClose={() => setIsEditing(false)}>
+                                        <Modal title="Редактировать профиль" onClose={() => setIsEditing(false)} onSave={handleSave}>
                                                 <FormInput label="Имя" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
                                                 <FormInput label="Фамилия" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
                                                 <FormInput label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                                                 <FormInput label="Биография" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
                                                 <FormInput label="Город" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
 
-                                                <SkillList
-                                                        label="Навыки (обучаю)"
-                                                        skills={form.teach}
-                                                        onChange={(i, field, value) => handleSkillChange("teach", i, field, value)}
-                                                        onAdd={() => handleAddSkill("teach")}
-                                                        onRemove={(i) => handleRemoveSkill("teach", i)}
-                                                />
-                                                <SkillList
-                                                        label="Навыки (изучаю)"
-                                                        skills={form.learn}
-                                                        onChange={(i, field, value) => handleSkillChange("learn", i, field, value)}
-                                                        onAdd={() => handleAddSkill("learn")}
-                                                        onRemove={(i) => handleRemoveSkill("learn", i)}
-                                                />
-
-                                                <div className="flex justify-end gap-2 mt-4">
-                                                        <button onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded dark:border-gray-500">
-                                                                Отмена
-                                                        </button>
-                                                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                                                Сохранить
-                                                        </button>
-                                                </div>
+                                                <SkillList label="Навыки (обучаю)" skills={form.teach} onChange={(i, f, v) => handleSkillChange("teach", i, f, v)} onAdd={() => handleAddSkill("teach")} onRemove={(i) => handleRemoveSkill("teach", i)} />
+                                                <SkillList label="Навыки (изучаю)" skills={form.learn} onChange={(i, f, v) => handleSkillChange("learn", i, f, v)} onAdd={() => handleAddSkill("learn")} onRemove={(i) => handleRemoveSkill("learn", i)} />
                                         </Modal>
                                 )}
 
-                                {/* Профиль */}
-                                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow flex flex-col sm:flex-row items-center gap-6">
+                                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow flex flex-col sm:flex-row items-center gap-6">
                                         <img
                                                 src={user.profile_image_url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.first_name}`}
                                                 alt="avatar"
@@ -128,16 +111,14 @@ export default function Profile() {
                                         </div>
                                 </div>
 
-                                {/* Навыки */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <SkillBlock title="Могу обучать:" skills={user.teachSkills?.map((s) => `${s.skill.name} (${s.level})`)} />
                                         <SkillBlock title="Хочу изучить:" skills={user.learnSkills?.map((s) => `${s.skill.name} (${s.level})`)} />
                                 </div>
 
-                                {/* Биография и местоположение */}
-                                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow space-y-2">
-                                        <p><strong>Город:</strong> {user.location || "Не указано"}</p>
-                                        <p><strong>О себе:</strong> {user.bio || "Пока ничего не написано"}</p>
+                                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow space-y-2">
+                                        <p><strong>Город:</strong> {user.location || <span className="text-gray-400">Не указано</span>}</p>
+                                        <p><strong>О себе:</strong> {user.bio || <span className="text-gray-400">Пока ничего не написано</span>}</p>
                                 </div>
                         </div>
                 </div>
@@ -176,13 +157,17 @@ function SkillList({ label, skills, onChange, onAdd, onRemove }) {
 
 function SkillBlock({ title, skills }) {
         return (
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
                         <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">{title}</h3>
-                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-200 space-y-1">
-                                {(skills || []).map((skill, i) => (
-                                        <li key={i}>{skill}</li>
-                                ))}
-                        </ul>
+                        {skills?.length ? (
+                                <ul className="list-disc list-inside text-gray-600 dark:text-gray-200 space-y-1">
+                                        {skills.map((skill, i) => (
+                                                <li key={i}>{skill}</li>
+                                        ))}
+                                </ul>
+                        ) : (
+                                <p className="text-gray-400">Навыков пока нет</p>
+                        )}
                 </div>
         );
 }
@@ -199,13 +184,23 @@ function FormInput({ label, ...props }) {
         );
 }
 
-function Modal({ title, children, onClose }) {
+function Modal({ title, children, onClose, onSave }) {
         return (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md relative">
-                                <h2 className="text-xl font-semibold mb-4">{title}</h2>
-                                {children}
-                                <button onClick={onClose} className="absolute top-2 right-3 text-gray-400 hover:text-gray-200 text-xl">×</button>
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md relative flex flex-col max-h-[90vh]">
+                                <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                                        <h2 className="text-xl font-semibold">{title}</h2>
+                                        {children}
+                                </div>
+                                <div className="p-4 border-t dark:border-gray-700 flex justify-end gap-2">
+                                        <button onClick={onClose} className="px-4 py-2 border rounded dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                Отмена
+                                        </button>
+                                        <button onClick={onSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                Сохранить
+                                        </button>
+                                </div>
+                                <button onClick={onClose} className="absolute top-2 right-3 text-gray-400 hover:text-white text-xl">×</button>
                         </div>
                 </div>
         );
