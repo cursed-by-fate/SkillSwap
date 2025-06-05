@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "@/lib/axios"; // убедись, что путь правильный
 
 export default function Register() {
         const [email, setEmail] = useState("");
@@ -7,11 +8,11 @@ export default function Register() {
         const [password, setPassword] = useState("");
         const [rePassword, setRePassword] = useState("");
         const [error, setError] = useState("");
-        const [status, setStatus] = useState("idle"); // idle | pending | success | error
+        const [status, setStatus] = useState("idle");
 
         const navigate = useNavigate();
 
-        const handleRegister = (e) => {
+        const handleRegister = async (e) => {
                 e.preventDefault();
                 setError("");
 
@@ -22,18 +23,25 @@ export default function Register() {
 
                 setStatus("pending");
 
-                // 🔧 Имитация запроса
-                setTimeout(() => {
-                        if (email && username && password.length >= 4) {
-                                localStorage.setItem("accessToken", "mock-access");
-                                localStorage.setItem("refreshToken", "mock-refresh");
-                                setStatus("success");
-                                setTimeout(() => navigate("/login"), 2000);
-                        } else {
-                                setError("Ошибка регистрации. Проверьте данные.");
-                                setStatus("error");
-                        }
-                }, 1000);
+                try {
+                        await api.post("/auth/users/", {
+                                email,
+                                username,
+                                password,
+                                re_password: rePassword,
+                        });
+
+                        setStatus("success");
+                        setTimeout(() => navigate("/login"), 2000);
+                } catch (err) {
+                        const apiError =
+                                err?.response?.data?.detail ||
+                                Object.values(err?.response?.data || {}).flat().join(" ") ||
+                                "Ошибка регистрации";
+
+                        setError(apiError);
+                        setStatus("error");
+                }
         };
 
         return (
@@ -41,9 +49,7 @@ export default function Register() {
                         <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-gray-900 dark:text-white">
                                 <h2 className="text-3xl font-bold mb-6 text-center">Регистрация</h2>
 
-                                {error && (
-                                        <div className="text-red-500 mb-3 text-center">{error}</div>
-                                )}
+                                {error && <div className="text-red-500 mb-3 text-center">{error}</div>}
 
                                 {status === "success" && (
                                         <div className="text-green-500 mb-3 text-center">

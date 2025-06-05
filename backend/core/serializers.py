@@ -1,7 +1,11 @@
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
+from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from core.models import User
+from skills.models import UserSkill
+from skills.serializers import UserSkillSerializer
 
 
 # ✅ Для регистрации пользователя
@@ -35,8 +39,11 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         return rep
 
 
-# ✅ Для получения информации о текущем пользователе
+# ✅ Для получения и редактирования профиля
 class UserSerializer(BaseUserSerializer):
+    teachSkills = serializers.SerializerMethodField()
+    learnSkills = serializers.SerializerMethodField()
+
     class Meta(BaseUserSerializer.Meta):
         model = User
         fields = (
@@ -52,4 +59,14 @@ class UserSerializer(BaseUserSerializer):
             "is_staff",
             "created_at",
             "updated_at",
+            "teachSkills",
+            "learnSkills",
         )
+
+    def get_teachSkills(self, user):
+        queryset = UserSkill.objects.filter(user=user, type="teaching")
+        return UserSkillSerializer(queryset, many=True).data
+
+    def get_learnSkills(self, user):
+        queryset = UserSkill.objects.filter(user=user, type="learning")
+        return UserSkillSerializer(queryset, many=True).data

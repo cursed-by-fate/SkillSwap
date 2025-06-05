@@ -1,12 +1,12 @@
 import api from "@/lib/axios";
 
-// ✅ Функция регистрации
+// ✅ Регистрация
 export async function register({ email, username, password, re_password }) {
         const response = await api.post("/auth/users/", {
                 email,
                 password,
                 re_password,
-                first_name: username, // если ты используешь это поле как имя
+                first_name: username,
         });
 
         const tokens = response.data.tokens;
@@ -18,9 +18,13 @@ export async function register({ email, username, password, re_password }) {
         return response.data;
 }
 
-// ✅ Получение текущего пользователя
+// ✅ Получение текущего пользователя (из кастомного ViewSet!)
 export async function fetchCurrentUser() {
-        const response = await api.get("/auth/users/me/");
+        const response = await api.get("/users/me/", {
+                headers: {
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+        });
         return response.data;
 }
 
@@ -47,8 +51,17 @@ export async function logout() {
         localStorage.removeItem("refreshToken");
 }
 
+// ✅ Обновление профиля с навыками
 export async function updateProfile(data) {
-        // временная заглушка
-        console.log("updateProfile called with", data);
-        return { success: true };
+        const res = await fetch("/api/users/me/", {
+                method: "PATCH",
+                headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+                body: JSON.stringify(data),
+        });
+
+        if (!res.ok) throw new Error("Ошибка при обновлении профиля");
+        return res.json();
 }

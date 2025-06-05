@@ -1,40 +1,44 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-// 💡 Мокаем useAuth
-const mockUser = {
-        id: "mock-user-1",
-        email: "mockuser@example.com",
-        first_name: "Mock",
-        last_name: "User",
-};
+import api from "@/lib/axios";
 
 export default function Login() {
         const [email, setEmail] = useState("");
         const [password, setPassword] = useState("");
-        const [loginStatus, setLoginStatus] = useState("idle");
+        const [loginStatus, setLoginStatus] = useState("idle"); // idle | pending | success | error
         const [loginError, setLoginError] = useState(null);
         const [user, setUser] = useState(null);
 
         const navigate = useNavigate();
 
-        const handleLogin = (e) => {
+        const handleLogin = async (e) => {
                 e.preventDefault();
                 setLoginStatus("pending");
                 setLoginError(null);
 
-                // 💬 Фиктивная авторизация
-                setTimeout(() => {
-                        if (email === "user@example.com" && password === "password") {
-                                localStorage.setItem("accessToken", "mock-access");
-                                localStorage.setItem("refreshToken", "mock-refresh");
-                                setUser(mockUser);
-                                setLoginStatus("success");
-                        } else {
-                                setLoginError({ message: "Неверный email или пароль" });
-                                setLoginStatus("error");
-                        }
-                }, 1000);
+                try {
+                        // 1. 🔐 Получаем access/refresh токены
+                        const { data } = await api.post("/auth/jwt/create/", {
+                                email,
+                                password,
+                        });
+
+                        localStorage.setItem("accessToken", data.access);
+                        localStorage.setItem("refreshToken", data.refresh);
+
+                        // 2. 📄 Получаем профиль пользователя
+                        const res = await api.get("/auth/users/me/");
+                        setUser(res.data);
+                        setLoginStatus("success");
+                } catch (err) {
+                        const apiError =
+                                err?.response?.data?.detail ||
+                                Object.values(err?.response?.data || {}).flat().join(" ") ||
+                                "Ошибка входа";
+
+                        setLoginError({ message: apiError });
+                        setLoginStatus("error");
+                }
         };
 
         useEffect(() => {
