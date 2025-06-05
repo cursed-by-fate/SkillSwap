@@ -32,6 +32,7 @@ export default function Navbar() {
                                         <Link to="/" className="font-bold text-xl text-white">
                                                 SkillSwap
                                         </Link>
+
                                 </div>
 
                                 <div className="hidden md:flex space-x-6 items-center">
@@ -68,6 +69,7 @@ export default function Navbar() {
                                                         <Link to="/register" className="ml-2 hover:text-blue-400">
                                                                 Регистрация
                                                         </Link>
+
                                                 </>
                                         )}
                                 </div>

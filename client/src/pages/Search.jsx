@@ -1,48 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useTheme from "@/hooks/useTheme";
+import { useUsers } from "@/hooks/useUsers";
 import { Link } from "react-router-dom";
-
-// 🔧 Заглушка пользователей
-const mockUsers = [
-        {
-                id: "1",
-                username: "mentor123",
-                email: "mentor@example.com",
-                avatar: "",
-                teachSkills: ["Python", "Git"],
-                learnSkills: ["React", "English"],
-        },
-        {
-                id: "2",
-                username: "learner456",
-                email: "learner@example.com",
-                avatar: "",
-                teachSkills: ["JavaScript", "CSS"],
-                learnSkills: ["Docker", "PostgreSQL"],
-        },
-];
 
 export default function Search() {
         const { theme } = useTheme();
+        const { data: users = [], isLoading, isError } = useUsers();
         const [query, setQuery] = useState("");
-        const [users, setUsers] = useState([]);
-        const [isLoading, setIsLoading] = useState(true);
-        const [isError, setIsError] = useState(false);
 
-        useEffect(() => {
-                // Эмуляция загрузки
-                setTimeout(() => {
-                        setUsers(mockUsers);
-                        setIsLoading(false);
-                }, 800);
-        }, []);
+        const filtered = users.filter((u) => {
+                const fullName = `${u.first_name || ""} ${u.last_name || ""}`.toLowerCase();
+                const email = u.email?.toLowerCase() || "";
+                const teachNames = u.teachSkills?.map((s) => s.skill?.name.toLowerCase()) || [];
+                const learnNames = u.learnSkills?.map((s) => s.skill?.name.toLowerCase()) || [];
 
-        const filtered = users.filter((u) =>
-                u.username.toLowerCase().includes(query.toLowerCase()) ||
-                u.email?.toLowerCase().includes(query.toLowerCase()) ||
-                u.teachSkills?.some((s) => s.toLowerCase().includes(query.toLowerCase())) ||
-                u.learnSkills?.some((s) => s.toLowerCase().includes(query.toLowerCase()))
-        );
+                return (
+                        fullName.includes(query.toLowerCase()) ||
+                        email.includes(query.toLowerCase()) ||
+                        teachNames.some((s) => s.includes(query.toLowerCase())) ||
+                        learnNames.some((s) => s.includes(query.toLowerCase()))
+                );
+        });
 
         return (
                 <div className="min-h-screen bg-white text-black dark:bg-gray-900 dark:text-white transition-colors">
@@ -51,7 +29,7 @@ export default function Search() {
 
                                 <input
                                         type="text"
-                                        placeholder="Поиск по нику, email, навыкам..."
+                                        placeholder="Поиск по имени, email, навыкам..."
                                         className="w-full p-3 mb-6 rounded bg-gray-100 border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
@@ -59,6 +37,9 @@ export default function Search() {
 
                                 {isLoading && <p>Загрузка пользователей...</p>}
                                 {isError && <p className="text-red-500">Ошибка загрузки</p>}
+                                {!isLoading && filtered.length === 0 && (
+                                        <p className="text-gray-500">Пользователи не найдены</p>
+                                )}
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filtered.map((user) => (
@@ -68,24 +49,30 @@ export default function Search() {
                                                 >
                                                         <div className="flex items-center gap-4 mb-4">
                                                                 <img
-                                                                        src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`}
-                                                                        alt={user.username}
+                                                                        src={
+                                                                                user.profile_image_url ||
+                                                                                `https://api.dicebear.com/7.x/initials/svg?seed=${user.first_name || user.email}`
+                                                                        }
+                                                                        alt={user.first_name || "avatar"}
                                                                         className="w-14 h-14 rounded-full border"
                                                                 />
                                                                 <div>
-                                                                        <h2 className="text-lg font-semibold">{user.username}</h2>
+                                                                        <h2 className="text-lg font-semibold">
+                                                                                {user.first_name} {user.last_name}
+                                                                        </h2>
+                                                                        <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
                                                                 </div>
                                                         </div>
 
                                                         <div className="mb-2">
                                                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Обучает:</p>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                        {user.teachSkills.map((s) => (
+                                                                        {user.teachSkills?.map((s) => (
                                                                                 <span
-                                                                                        key={s}
+                                                                                        key={s.id}
                                                                                         className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs"
                                                                                 >
-                                                                                        {s}
+                                                                                        {s.skill?.name}
                                                                                 </span>
                                                                         ))}
                                                                 </div>
@@ -94,12 +81,12 @@ export default function Search() {
                                                         <div className="mb-4">
                                                                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Хочет изучить:</p>
                                                                 <div className="flex flex-wrap gap-1">
-                                                                        {user.learnSkills.map((s) => (
+                                                                        {user.learnSkills?.map((s) => (
                                                                                 <span
-                                                                                        key={s}
+                                                                                        key={s.id}
                                                                                         className="bg-purple-600 text-white px-2 py-0.5 rounded text-xs"
                                                                                 >
-                                                                                        {s}
+                                                                                        {s.skill?.name}
                                                                                 </span>
                                                                         ))}
                                                                 </div>
