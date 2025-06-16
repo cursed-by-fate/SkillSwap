@@ -40,22 +40,38 @@ export default function NotificationsPage() {
                                                                                 : "bg-blue-100 dark:bg-blue-900"
                                                                         }`}
                                                         >
-                                                                <div className="flex justify-between items-center">
+                                                                <div className="flex justify-between items-center flex-wrap gap-2">
                                                                         <div className="flex items-center gap-2">
                                                                                 <Bell />
                                                                                 <div>
-                                                                                        <p className="font-medium">{n.text || n.title || "Уведомление"}</p>
-                                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">{n.created_at?.slice(0, 10)}</p>
+                                                                                        <p className="font-medium">{n.message || n.text || "Уведомление"}</p>
+                                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                                                                {n.created_at?.slice(0, 10)}
+                                                                                        </p>
                                                                                 </div>
                                                                         </div>
-                                                                        {!n.is_read && (
-                                                                                <button
-                                                                                        onClick={() => markAsRead.mutate(n.id)}
-                                                                                        className="text-sm text-blue-600 hover:underline"
-                                                                                >
-                                                                                        Отметить как прочитано
-                                                                                </button>
-                                                                        )}
+
+                                                                        <div className="flex items-center gap-4">
+                                                                                {/* Кнопка "Присоединиться" для видеозвонка */}
+                                                                                {n.type === "incoming_call" && n.metadata?.chat_id && (
+                                                                                        <a
+                                                                                                href={`/video-call/${n.metadata.chat_id}`}
+                                                                                                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                                                                        >
+                                                                                                Присоединиться
+                                                                                        </a>
+                                                                                )}
+
+                                                                                {/* Кнопка "Отметить как прочитано" */}
+                                                                                {!n.is_read && (
+                                                                                        <button
+                                                                                                onClick={() => markAsRead.mutate(n.id)}
+                                                                                                className="text-sm text-blue-600 hover:underline"
+                                                                                        >
+                                                                                                Отметить как прочитано
+                                                                                        </button>
+                                                                                )}
+                                                                        </div>
                                                                 </div>
                                                         </li>
                                                 ))}
@@ -64,4 +80,5 @@ export default function NotificationsPage() {
                         </div>
                 </div>
         );
+
 }

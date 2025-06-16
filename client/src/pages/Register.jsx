@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "@/lib/axios"; // убедись, что путь правильный
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Register() {
         const [email, setEmail] = useState("");
@@ -8,11 +8,11 @@ export default function Register() {
         const [password, setPassword] = useState("");
         const [rePassword, setRePassword] = useState("");
         const [error, setError] = useState("");
-        const [status, setStatus] = useState("idle");
 
+        const { register, registerStatus, registerError } = useAuth();
         const navigate = useNavigate();
 
-        const handleRegister = async (e) => {
+        const handleRegister = (e) => {
                 e.preventDefault();
                 setError("");
 
@@ -21,27 +21,18 @@ export default function Register() {
                         return;
                 }
 
-                setStatus("pending");
-
-                try {
-                        await api.post("/auth/users/", {
-                                email,
-                                username,
-                                password,
-                                re_password: rePassword,
-                        });
-
-                        setStatus("success");
-                        setTimeout(() => navigate("/login"), 2000);
-                } catch (err) {
-                        const apiError =
-                                err?.response?.data?.detail ||
-                                Object.values(err?.response?.data || {}).flat().join(" ") ||
-                                "Ошибка регистрации";
-
-                        setError(apiError);
-                        setStatus("error");
-                }
+                register(
+                        { email, username, password, re_password: rePassword },
+                        {
+                                onError: (err) => {
+                                        const message =
+                                                err?.response?.data?.detail ||
+                                                Object.values(err?.response?.data || {}).flat().join(" ") ||
+                                                "Ошибка регистрации";
+                                        setError(message);
+                                },
+                        }
+                );
         };
 
         return (
@@ -51,7 +42,7 @@ export default function Register() {
 
                                 {error && <div className="text-red-500 mb-3 text-center">{error}</div>}
 
-                                {status === "success" && (
+                                {registerStatus === "success" && (
                                         <div className="text-green-500 mb-3 text-center">
                                                 Успешно! Перенаправление...
                                         </div>
@@ -84,10 +75,12 @@ export default function Register() {
                                         />
                                         <button
                                                 type="submit"
-                                                disabled={status === "pending"}
+                                                disabled={registerStatus === "pending"}
                                                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold transition"
                                         >
-                                                {status === "pending" ? "Регистрируем..." : "Зарегистрироваться"}
+                                                {registerStatus === "pending"
+                                                        ? "Регистрируем..."
+                                                        : "Зарегистрироваться"}
                                         </button>
                                 </form>
 

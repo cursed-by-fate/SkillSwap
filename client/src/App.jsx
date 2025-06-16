@@ -12,14 +12,17 @@ import UserProfile from "./pages/UserProfile";
 import ReviewsPage from "@/pages/Reviews";
 import NotificationsPage from "@/pages/Notifications";
 import SessionsPage from "@/pages/Sessions";
+import VideoCall from "./pages/VideoCall";
 import ChatPage from "@/pages/Chat"; // ✅ Используется как основной чат
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNotificationSocket } from "@/hooks/useNotificationSocket";
 
 import { useEffect } from "react";
 import useTheme from "@/hooks/useTheme";
 
 export default function App() {
+  useNotificationSocket();
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -47,6 +50,7 @@ export default function App() {
         <Route path="/sessions" element={<SessionsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/video-call/:chatId" element={<VideoCall />} />
       </Routes>
       <ToastContainer position="top-center" autoClose={3000} />
     </BrowserRouter>

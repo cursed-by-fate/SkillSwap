@@ -5,11 +5,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from core.models import User
 from skills.models import UserSkill
-from skills.serializers import UserSkillSerializer
+from skills.serializers import SkillSerializer
+from reviews.models import Review
 
 
-# ✅ Для регистрации пользователя
+# 🔐 Для регистрации пользователя
 class UserCreateSerializer(BaseUserCreateSerializer):
+    profile_image = serializers.ImageField(required=False, allow_null=True)
+
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
         fields = (
@@ -18,7 +21,7 @@ class UserCreateSerializer(BaseUserCreateSerializer):
             "password",
             "first_name",
             "last_name",
-            "profile_image_url",
+            "profile_image",  # 👈 file upload
             "bio",
             "location",
             "time_zone",
@@ -39,34 +42,56 @@ class UserCreateSerializer(BaseUserCreateSerializer):
         return rep
 
 
-# ✅ Для получения и редактирования профиля
-class UserSerializer(BaseUserSerializer):
+class UserSkillNestedSerializer(serializers.ModelSerializer):
+    skill = SkillSerializer()
+
+    class Meta:
+        model = UserSkill
+        fields = ["id", "skill", "level"]
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField()
+
+    class Meta:
+        model = Review
+        fields = ["id", "text", "author"]
+
+
+class UserSerializer(serializers.ModelSerializer):
     teachSkills = serializers.SerializerMethodField()
     learnSkills = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
+    profile_image_url = serializers.SerializerMethodField()
 
-    class Meta(BaseUserSerializer.Meta):
+    class Meta:
         model = User
-        fields = (
+        fields = [
             "id",
             "email",
             "first_name",
             "last_name",
-            "profile_image_url",
-            "bio",
-            "location",
-            "time_zone",
-            "is_active",
-            "is_staff",
-            "created_at",
-            "updated_at",
             "teachSkills",
             "learnSkills",
-        )
+            "reviews",
+            "profile_image_url",
+        ]
 
-    def get_teachSkills(self, user):
-        queryset = UserSkill.objects.filter(user=user, type="teaching")
-        return UserSkillSerializer(queryset, many=True).data
+    def get_teachSkills(self, obj):
+        return UserSkillNestedSerializer(
+            obj.user_skills.filter(type="teaching"), many=True
+        ).data
 
-    def get_learnSkills(self, user):
-        queryset = UserSkill.objects.filter(user=user, type="learning")
-        return UserSkillSerializer(queryset, many=True).data
+    def get_learnSkills(self, obj):
+        return UserSkillNestedSerializer(
+            obj.user_skills.filter(type="learning"), many=True
+        ).data
+
+    def get_reviews(self, obj):
+        return ReviewSerializer(obj.reviews_received.all(), many=True).data
+
+    def get_profile_image_url(self, obj):
+        request = self.context.get("request")
+        if request and obj.profile_image and hasattr(obj.profile_image, "url"):
+            return request.build_absolute_uri(obj.profile_image.url)
+        return None

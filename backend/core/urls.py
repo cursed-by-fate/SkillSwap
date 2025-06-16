@@ -6,8 +6,10 @@ router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
 
 urlpatterns = [
-    path("", include(router.urls)),  # ✅ твой кастомный UserViewSet
+    # 🔹 Роуты пользователей, включая кастомный /users/me/
+    path("", include(router.urls)),
+    # 🔹 JWT авторизация (логин, рефреш токена)
+    path("auth/", include("djoser.urls.jwt")),
+    # 🔹 Кастомный logout (с аннулированием refresh токена)
     path("logout/", LogoutView.as_view(), name="logout"),
-    path("auth/", include("djoser.urls")),  # ✅ djoser
-    path("auth/", include("djoser.urls.jwt")),  # ✅ JWT login/logout
 ]

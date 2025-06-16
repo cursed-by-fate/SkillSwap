@@ -1,51 +1,15 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "@/lib/axios";
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
         const [email, setEmail] = useState("");
         const [password, setPassword] = useState("");
-        const [loginStatus, setLoginStatus] = useState("idle"); // idle | pending | success | error
-        const [loginError, setLoginError] = useState(null);
-        const [user, setUser] = useState(null);
+        const { login, loginStatus, loginError } = useAuth();
 
-        const navigate = useNavigate();
-
-        const handleLogin = async (e) => {
+        const handleLogin = (e) => {
                 e.preventDefault();
-                setLoginStatus("pending");
-                setLoginError(null);
-
-                try {
-                        // 1. 🔐 Получаем access/refresh токены
-                        const { data } = await api.post("/auth/jwt/create/", {
-                                email,
-                                password,
-                        });
-
-                        localStorage.setItem("accessToken", data.access);
-                        localStorage.setItem("refreshToken", data.refresh);
-
-                        // 2. 📄 Получаем профиль пользователя
-                        const res = await api.get("/auth/users/me/");
-                        setUser(res.data);
-                        setLoginStatus("success");
-                } catch (err) {
-                        const apiError =
-                                err?.response?.data?.detail ||
-                                Object.values(err?.response?.data || {}).flat().join(" ") ||
-                                "Ошибка входа";
-
-                        setLoginError({ message: apiError });
-                        setLoginStatus("error");
-                }
+                login({ email, password });
         };
-
-        useEffect(() => {
-                if (user) {
-                        navigate("/");
-                }
-        }, [user, navigate]);
 
         return (
                 <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4">
@@ -54,7 +18,7 @@ export default function Login() {
 
                                 {loginError && (
                                         <div className="text-red-500 mb-4 text-center">
-                                                {loginError.message}
+                                                {loginError.message || "Ошибка входа"}
                                         </div>
                                 )}
 

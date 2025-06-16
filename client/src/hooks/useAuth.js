@@ -1,12 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import * as authApi from "@/api/auth"; // подключение к API
+import * as authApi from "@/api/auth";
 
 export const useAuth = () => {
         const queryClient = useQueryClient();
         const navigate = useNavigate();
-
-        const accessToken = localStorage.getItem("accessToken");
 
         // 📌 Получение текущего пользователя
         const {
@@ -16,7 +14,6 @@ export const useAuth = () => {
         } = useQuery({
                 queryKey: ["currentUser"],
                 queryFn: authApi.fetchCurrentUser,
-                enabled: !!accessToken,        // Только если токен есть
                 refetchOnMount: true,
                 refetchOnWindowFocus: false,
                 retry: false,
@@ -25,8 +22,8 @@ export const useAuth = () => {
         // 🔐 Вход
         const loginMutation = useMutation({
                 mutationFn: authApi.login,
-                onSuccess: async () => {
-                        await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+                onSuccess: async (user) => {
+                        queryClient.setQueryData(["currentUser"], user); // ⬅️ вручную ставим после login()
                         navigate("/dashboard");
                 },
                 onError: (err) => {

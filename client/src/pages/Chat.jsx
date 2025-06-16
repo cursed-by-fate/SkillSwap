@@ -1,28 +1,30 @@
+// ChatPage.jsx
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import useTheme from "@/hooks/useTheme";
 import { useChats, useMessages, useSendMessage } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import ScheduleSessionModal from "@/components/ScheduleSessionModal";
+import { getWebSocketUrl } from "@/utils/ws";
 
 export default function ChatPage() {
         const inputRef = useRef(null);
         const messagesEndRef = useRef(null);
-
         const { chatId } = useParams();
+        const navigate = useNavigate();
+
         const { theme } = useTheme();
         const { user } = useAuth();
-
         const [selectedChatId, setSelectedChatId] = useState(null);
-        const [wasChatSelected, setWasChatSelected] = useState(false); // ✅ контроль выбора
+        const [wasChatSelected, setWasChatSelected] = useState(false);
         const [newMessage, setNewMessage] = useState("");
         const [isModalOpen, setIsModalOpen] = useState(false);
+        const [incomingCall, setIncomingCall] = useState(null);
 
         const chatsQuery = useChats();
         const sendMessageMutation = useSendMessage();
         const messagesQuery = useMessages(selectedChatId);
 
-        // ✅ Сортировка чатов по последнему сообщению
         const chats = (chatsQuery.data || []).slice().sort((a, b) => {
                 const aTime = new Date(a.last_message_at || a.created_at || 0);
                 const bTime = new Date(b.last_message_at || b.created_at || 0);
@@ -31,7 +33,6 @@ export default function ChatPage() {
 
         const messages = messagesQuery.data || [];
 
-        // ✅ Устанавливаем выбранный чат один раз
         useEffect(() => {
                 if (chatId) {
                         setSelectedChatId(parseInt(chatId));
@@ -42,28 +43,46 @@ export default function ChatPage() {
                 }
         }, [chatId, chats, wasChatSelected]);
 
-        // ✅ Скролл вниз
         useEffect(() => {
                 if (messagesEndRef.current) {
                         messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
                 }
         }, [messages]);
 
-        // ✅ Автофокус на input
         useEffect(() => {
                 if (inputRef.current) {
                         inputRef.current.focus();
                 }
         }, [selectedChatId]);
 
+        useEffect(() => {
+                if (!selectedChatId || !user) return;
+
+                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+                socket.onmessage = (event) => {
+                        try {
+                                const data = JSON.parse(event.data);
+                                if (data.type === "incoming_call" && data.from_user_id !== user.id) {
+                                        setIncomingCall({
+                                                from: data.from_user_name,
+                                                chatId: selectedChatId,
+                                        });
+                                }
+                        } catch (err) {
+                                console.error("WebSocket message error:", err);
+                        }
+                };
+
+                socket.onerror = (err) => {
+                        console.error("WebSocket error:", err);
+                };
+
+                return () => socket.close();
+        }, [selectedChatId, user]);
+
         const handleSend = () => {
                 if (!newMessage.trim() || !selectedChatId) return;
-
-                sendMessageMutation.mutate({
-                        chat: selectedChatId,
-                        content: newMessage,
-                });
-
+                sendMessageMutation.mutate({ chat: selectedChatId, content: newMessage });
                 setNewMessage("");
         };
 
@@ -73,8 +92,52 @@ export default function ChatPage() {
         const selectedChat = chats.find((c) => c.id === selectedChatId);
         const partner = selectedChat ? getPartner(selectedChat) : null;
 
+        const handleAcceptCall = () => {
+                if (!incomingCall?.chatId) return;
+
+                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+                socket.onopen = () => {
+                        socket.send(JSON.stringify({ type: "accept_call" }));
+                        socket.close();
+                        navigate(`/video-call/${incomingCall.chatId}`);
+                        setIncomingCall(null);
+                };
+        };
+
+        const handleDeclineCall = () => {
+                if (!incomingCall?.chatId) return;
+                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+                socket.onopen = () => {
+                        socket.send(JSON.stringify({ type: "decline_call" }));
+                        socket.close();
+                        setIncomingCall(null);
+                };
+        };
+
+        const handleStartCall = () => {
+                if (!selectedChatId || !partner || !user) return;
+                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+                socket.onopen = () => {
+                        socket.send(
+                                JSON.stringify({
+                                        type: "start_call",
+                                        to_user_id: partner.id,
+                                        from_user_id: user.id,
+                                        from_user_name: `${user.first_name} ${user.last_name}`,
+                                        chat_id: selectedChatId,
+                                })
+                        );
+                        alert("Звонок отправлен!");
+                        socket.close();
+                };
+
+                socket.onerror = (err) => {
+                        console.error("Ошибка WebSocket при звонке:", err);
+                };
+        };
+
         return (
-                <div className="flex h-[calc(100vh-64px)] transition-colors bg-white text-black dark:bg-gray-900 dark:text-white">
+                <div className="flex h-[calc(100vh-64px)] bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
                         {/* Левая панель */}
                         <aside className="w-1/3 border-r border-gray-300 dark:border-gray-700 hidden md:block">
                                 <div className="p-4 font-bold text-lg">Чаты</div>
@@ -91,8 +154,8 @@ export default function ChatPage() {
                                                                         setWasChatSelected(true);
                                                                 }}
                                                                 className={`p-4 flex items-center gap-3 cursor-pointer transition-colors ${selectedChatId === chat.id
-                                                                                ? "bg-gray-200 dark:bg-gray-800"
-                                                                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                        ? "bg-gray-200 dark:bg-gray-800"
+                                                                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
                                                                         }`}
                                                         >
                                                                 <img
@@ -114,20 +177,32 @@ export default function ChatPage() {
                                 </div>
                         </aside>
 
-                        {/* Окно чата */}
-                        <main className="flex-1 flex flex-col">
+                        {/* Правая часть */}
+                        <main className="flex-1 flex flex-col relative">
                                 <div className="flex justify-between items-center border-b border-gray-300 dark:border-gray-700 p-4 font-semibold">
                                         <div>
                                                 Чат с {partner ? `${partner.first_name} ${partner.last_name}` : "..."}
                                         </div>
-
                                         {selectedChat && (
-                                                <button
-                                                        onClick={() => setIsModalOpen(true)}
-                                                        className="text-sm text-blue-600 hover:underline"
-                                                >
-                                                        + Запланировать сессию
-                                                </button>
+                                                <div className="flex gap-3">
+                                                        <button
+                                                                onClick={() => setIsModalOpen(true)}
+                                                                className="text-sm text-blue-600 hover:underline"
+                                                        >
+                                                                + Сессия
+                                                        </button>
+                                                        <button
+                                                                onClick={handleStartCall}
+                                                                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                                                        >
+                                                                📞 Позвонить
+                                                        </button>
+                                                        <Link to={`/video-call/${selectedChatId}`}>
+                                                                <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                                                                        📹 Видеозвонок
+                                                                </button>
+                                                        </Link>
+                                                </div>
                                         )}
                                 </div>
 
@@ -136,8 +211,8 @@ export default function ChatPage() {
                                                 <div
                                                         key={msg.id || index}
                                                         className={`max-w-md p-2 rounded break-words ${msg.sender?.id === user.id
-                                                                        ? "bg-blue-600 text-white self-end ml-auto text-right"
-                                                                        : "bg-gray-200 text-black dark:bg-gray-700 dark:text-white self-start mr-auto"
+                                                                ? "bg-blue-600 text-white self-end ml-auto text-right"
+                                                                : "bg-gray-200 text-black dark:bg-gray-700 dark:text-white self-start mr-auto"
                                                                 }`}
                                                 >
                                                         <div>{msg.content}</div>
@@ -164,7 +239,6 @@ export default function ChatPage() {
                                 </div>
                         </main>
 
-                        {/* Модалка создания сессии */}
                         {isModalOpen && selectedChat && (
                                 <ScheduleSessionModal
                                         isOpen={isModalOpen}
@@ -172,6 +246,31 @@ export default function ChatPage() {
                                         chat={selectedChat}
                                         currentUser={user}
                                 />
+                        )}
+
+                        {/* Входящий звонок */}
+                        {incomingCall && (
+                                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                        <div className="bg-white dark:bg-gray-800 text-black dark:text-white p-6 rounded-xl shadow-lg text-center space-y-4">
+                                                <h2 className="text-xl font-bold">
+                                                        Входящий звонок от {incomingCall.from}
+                                                </h2>
+                                                <div className="flex justify-center gap-4">
+                                                        <button
+                                                                onClick={handleAcceptCall}
+                                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                                        >
+                                                                Принять
+                                                        </button>
+                                                        <button
+                                                                onClick={handleDeclineCall}
+                                                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                                                        >
+                                                                Отклонить
+                                                        </button>
+                                                </div>
+                                        </div>
+                                </div>
                         )}
                 </div>
         );

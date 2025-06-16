@@ -20,4 +20,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Команда запуска по умолчанию — не указываем здесь напрямую daphne, делается в docker-compose
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["daphne", "backend.asgi:application"]

@@ -18,19 +18,16 @@ export default function Profile() {
                                 first_name: user.first_name || "",
                                 last_name: user.last_name || "",
                                 email: user.email || "",
+                                profile_image: null, // ← добавлено
+                                profile_image_url: user.profile_image_url || "", // ← сохранили для preview
                                 bio: user.bio || "",
                                 location: user.location || "",
-                                teach: (user.teachSkills || []).map((s) => ({
-                                        name: s.skill.name,
-                                        level: s.level || "",
-                                })),
-                                learn: (user.learnSkills || []).map((s) => ({
-                                        name: s.skill.name,
-                                        level: s.level || "",
-                                })),
+                                teach: (user.teachSkills || []).map((s) => ({ name: s.skill.name, level: s.level || "" })),
+                                learn: (user.learnSkills || []).map((s) => ({ name: s.skill.name, level: s.level || "" })),
                         });
                 }
         }, [user]);
+
 
         const handleSkillChange = (type, index, field, value) => {
                 setForm((prev) => {
@@ -56,18 +53,21 @@ export default function Profile() {
         };
 
         const handleSave = async () => {
-                const payload = {
-                        first_name: form.first_name,
-                        last_name: form.last_name,
-                        email: form.email,
-                        bio: form.bio,
-                        location: form.location,
-                        teachSkills: form.teach.filter((s) => s.name),
-                        learnSkills: form.learn.filter((s) => s.name),
-                };
+                const formData = new FormData();
+                formData.append("first_name", form.first_name);
+                formData.append("last_name", form.last_name);
+                formData.append("email", form.email);
+                formData.append("bio", form.bio);
+                formData.append("location", form.location);
+                if (form.profile_image) {
+                        formData.append("profile_image", form.profile_image);
+                }
+
+                formData.append("teachSkills", JSON.stringify(form.teach.filter((s) => s.name)));
+                formData.append("learnSkills", JSON.stringify(form.learn.filter((s) => s.name)));
 
                 try {
-                        await updateProfile(payload);
+                        await updateProfile(formData);
                         await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
                         setIsEditing(false);
                         toast.success("Профиль успешно обновлён");
@@ -76,6 +76,7 @@ export default function Profile() {
                         toast.error("Ошибка при обновлении профиля");
                 }
         };
+
 
         if (!user || !form) return <div className="p-6">Загрузка...</div>;
 
@@ -88,6 +89,16 @@ export default function Profile() {
                                                 <FormInput label="Имя" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
                                                 <FormInput label="Фамилия" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
                                                 <FormInput label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                                                <FormFile
+                                                        label="Аватарка (загрузка)"
+                                                        onChange={(e) => setForm({ ...form, profile_image: e.target.files[0] })}
+                                                        preview={
+                                                                form.profile_image
+                                                                        ? URL.createObjectURL(form.profile_image)
+                                                                        : form.profile_image_url
+                                                        }
+                                                />
+
                                                 <FormInput label="Биография" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
                                                 <FormInput label="Город" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
 
@@ -183,6 +194,28 @@ function FormInput({ label, ...props }) {
                 </div>
         );
 }
+
+function FormFile({ label, onChange, preview }) {
+        return (
+                <div className="mb-3">
+                        <label className="block mb-1 text-sm text-gray-700 dark:text-gray-300">{label}</label>
+                        {preview && (
+                                <img
+                                        src={preview}
+                                        alt="preview"
+                                        className="mb-2 w-24 h-24 rounded-full border"
+                                />
+                        )}
+                        <input
+                                type="file"
+                                accept="image/*"
+                                onChange={onChange}
+                                className="block w-full p-2 border rounded bg-gray-100 dark:bg-gray-700 text-black dark:text-white"
+                        />
+                </div>
+        );
+}
+
 
 function Modal({ title, children, onClose, onSave }) {
         return (

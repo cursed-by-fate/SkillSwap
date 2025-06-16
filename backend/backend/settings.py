@@ -10,7 +10,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- Безопасность ---
 SECRET_KEY = "django-insecure-replace-me-in-prod"
 DEBUG = True
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "backend",  # имя контейнера в docker-compose
+]
 
 # --- Приложения ---
 INSTALLED_APPS = [
@@ -39,7 +43,7 @@ INSTALLED_APPS = [
 
 # --- Middleware ---
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # важно до CommonMiddleware
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -132,7 +136,7 @@ CHANNEL_LAYERS = {
 # --- CORS ---
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # 👈 точный адрес фронтенда
+    "http://localhost:5173",  # фронт локально
 ]
 
 # НЕ ставь '*' если CORS_ALLOW_CREDENTIALS = True
@@ -151,7 +155,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
 }
 

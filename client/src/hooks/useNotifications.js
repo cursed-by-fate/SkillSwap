@@ -14,7 +14,7 @@ export const useNotifications = () => {
         });
 
         const unreadCount = notifications.filter((n) => !n.is_read).length;
-        const recentNotifications = notifications.slice(0, 3); // показываем 3
+        const recentNotifications = notifications.slice(0, 5);
 
         return { notifications, recentNotifications, unreadCount, isLoading, isError, refetch };
 };

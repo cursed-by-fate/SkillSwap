@@ -32,7 +32,8 @@ services:
       "
     volumes:
       - ./backend:/app
-      - static_volume:/app/staticfiles # ⬅️ собранные статики
+      - static_volume:/app/staticfiles
+      - ./media:/app/media
     working_dir: /app
     environment:
       DJANGO_SUPERUSER_EMAIL: admin@example.com
@@ -43,18 +44,6 @@ services:
       - redis
     ports:
       - "8000:8000"
-
-  frontend:
-    build:
-      context: ./client
-    command: npm run dev
-    volumes:
-      - ./client:/app
-    working_dir: /app
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
 
 volumes:
   pgdata:

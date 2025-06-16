@@ -1,3 +1,4 @@
+import json
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from core.models import User
 from core.serializers import UserSerializer
@@ -14,14 +16,10 @@ from skills.models import Skill, UserSkill
 
 class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        # ✅ Теперь возвращаем всех пользователей
         return User.objects.all()
-
-    def get_object(self):
-        return self.request.user
 
     @action(
         detail=False, methods=["get", "patch"], permission_classes=[IsAuthenticated]
@@ -30,22 +28,40 @@ class UserViewSet(ModelViewSet):
         user = request.user
 
         if request.method == "GET":
-            serializer = self.get_serializer(user)
+            serializer = self.get_serializer(user, context={"request": request})
             return Response(serializer.data)
 
-        # PATCH вручную
-        data = request.data.copy()
-        teach_skills = data.pop("teachSkills", [])
-        learn_skills = data.pop("learnSkills", [])
+        # 🎯 PATCH-запрос (обновление профиля)
+        teach_skills = request.data.get("teachSkills", [])
+        learn_skills = request.data.get("learnSkills", [])
 
-        serializer = self.get_serializer(user, data=data, partial=True)
+        # 🔍 Поддержка строки JSON (на случай, если frontend отправляет строку)
+        if isinstance(teach_skills, str):
+            try:
+                teach_skills = json.loads(teach_skills)
+            except json.JSONDecodeError:
+                teach_skills = []
+        if isinstance(learn_skills, str):
+            try:
+                learn_skills = json.loads(learn_skills)
+            except json.JSONDecodeError:
+                learn_skills = []
+
+        # 🔧 Обновляем пользователя
+        serializer = self.get_serializer(
+            user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        # 🔄 Обновляем навыки
         self._update_user_skills(user, teach_skills, "teaching")
         self._update_user_skills(user, learn_skills, "learning")
 
-        return Response(self.get_serializer(user).data)
+        return Response(self.get_serializer(user, context={"request": request}).data)
 
     def _update_user_skills(self, user, skills_data, skill_type):
         UserSkill.objects.filter(user=user, type=skill_type).delete()
@@ -68,10 +84,6 @@ class UserViewSet(ModelViewSet):
 
 
 class LogoutView(APIView):
-    """
-    Выход пользователя: аннулирует refresh-токен.
-    """
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):

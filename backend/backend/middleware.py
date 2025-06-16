@@ -1,13 +1,12 @@
 from channels.middleware import BaseMiddleware
-from rest_framework_simplejwt.tokens import UntypedToken
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth import get_user_model
 from urllib.parse import parse_qs
-from jwt import decode as jwt_decode
-from django.conf import settings
+from django.db import close_old_connections
+from asgiref.sync import sync_to_async
+import logging
 
-User = get_user_model()
+logger = logging.getLogger("django")
 
 
 class JWTAuthMiddleware(BaseMiddleware):
@@ -16,25 +15,19 @@ class JWTAuthMiddleware(BaseMiddleware):
             query_string = scope["query_string"].decode()
             token = parse_qs(query_string).get("token", [None])[0]
 
-            if token is None:
+            if not token:
                 scope["user"] = AnonymousUser()
                 return await super().__call__(scope, receive, send)
 
-            UntypedToken(token)
-            decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-            user_id = decoded_data.get("user_id")
+            # Валидируем токен
+            jwt_auth = JWTAuthentication()
+            validated_token = jwt_auth.get_validated_token(token)
+            user = await sync_to_async(jwt_auth.get_user)(validated_token)
 
-            user = await self.get_user(user_id)
+            close_old_connections()
             scope["user"] = user
-
-        except (InvalidToken, TokenError, Exception):
+        except Exception as e:
+            logger.warning(f"❌ WebSocket JWT auth failed: {e}")
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
-
-    @staticmethod
-    async def get_user(user_id):
-        try:
-            return await User.objects.aget(id=user_id)
-        except User.DoesNotExist:
-            return AnonymousUser()
