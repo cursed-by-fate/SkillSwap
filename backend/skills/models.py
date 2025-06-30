@@ -28,7 +28,7 @@ class UserSkill(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="user_skills",  # ✅ добавлено
+        related_name="user_skills",
     )
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)

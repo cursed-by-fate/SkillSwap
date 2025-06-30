@@ -19,7 +19,6 @@ class JWTAuthMiddleware(BaseMiddleware):
                 scope["user"] = AnonymousUser()
                 return await super().__call__(scope, receive, send)
 
-            # Валидируем токен
             jwt_auth = JWTAuthentication()
             validated_token = jwt_auth.get_validated_token(token)
             user = await sync_to_async(jwt_auth.get_user)(validated_token)
@@ -27,7 +26,7 @@ class JWTAuthMiddleware(BaseMiddleware):
             close_old_connections()
             scope["user"] = user
         except Exception as e:
-            logger.warning(f"❌ WebSocket JWT auth failed: {e}")
+            logger.warning(f"WebSocket JWT auth failed: {e}")
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)

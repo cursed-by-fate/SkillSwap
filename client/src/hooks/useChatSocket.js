@@ -8,7 +8,7 @@ export function useChatSocket(chatId) {
         useEffect(() => {
                 if (!chatId) return;
 
-                const token = localStorage.getItem("accessToken");
+                const token = localStorage.getItem("access");
                 const ws = new WebSocket(`ws://localhost:8000/ws/chat/${chatId}/?token=${token}`);
                 socketRef.current = ws;
 

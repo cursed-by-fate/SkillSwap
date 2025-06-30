@@ -1,4 +1,3 @@
-// ChatPage.jsx
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import useTheme from "@/hooks/useTheme";
@@ -10,6 +9,7 @@ import { getWebSocketUrl } from "@/utils/ws";
 export default function ChatPage() {
         const inputRef = useRef(null);
         const messagesEndRef = useRef(null);
+        const socketRef = useRef(null);
         const { chatId } = useParams();
         const navigate = useNavigate();
 
@@ -58,7 +58,19 @@ export default function ChatPage() {
         useEffect(() => {
                 if (!selectedChatId || !user) return;
 
-                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+                const wsUrl = getWebSocketUrl(`/ws/chat/${selectedChatId}/`);
+                if (!wsUrl) {
+                        console.warn("❌ WebSocket URL пустой — access токен не найден.");
+                        return;
+                }
+
+                const socket = new WebSocket(wsUrl);
+                socketRef.current = socket;
+
+                socket.onopen = () => {
+                        console.log("✅ WebSocket открыт:", wsUrl);
+                };
+
                 socket.onmessage = (event) => {
                         try {
                                 const data = JSON.parse(event.data);
@@ -69,22 +81,22 @@ export default function ChatPage() {
                                         });
                                 }
                         } catch (err) {
-                                console.error("WebSocket message error:", err);
+                                console.error("❌ Ошибка при обработке сообщения WebSocket:", err);
                         }
                 };
 
                 socket.onerror = (err) => {
-                        console.error("WebSocket error:", err);
+                        console.error("🚨 WebSocket ошибка:", err);
                 };
 
-                return () => socket.close();
-        }, [selectedChatId, user]);
+                socket.onclose = () => {
+                        console.log("🔌 WebSocket соединение закрыто.");
+                };
 
-        const handleSend = () => {
-                if (!newMessage.trim() || !selectedChatId) return;
-                sendMessageMutation.mutate({ chat: selectedChatId, content: newMessage });
-                setNewMessage("");
-        };
+                return () => {
+                        socket.close();
+                };
+        }, [selectedChatId, user]);
 
         const getPartner = (chat) =>
                 chat.participant1.id === user.id ? chat.participant2 : chat.participant1;
@@ -92,41 +104,51 @@ export default function ChatPage() {
         const selectedChat = chats.find((c) => c.id === selectedChatId);
         const partner = selectedChat ? getPartner(selectedChat) : null;
 
+        const handleSend = () => {
+                if (!newMessage.trim() || !selectedChatId) return;
+                sendMessageMutation.mutate({ chat: selectedChatId, content: newMessage });
+                setNewMessage("");
+        };
+
+        const sendSocketMessage = (type) => {
+                const wsUrl = getWebSocketUrl(`/ws/chat/${selectedChatId}/`);
+                if (!wsUrl) return;
+
+                const socket = new WebSocket(wsUrl);
+                socket.onopen = () => {
+                        socket.send(JSON.stringify({ type }));
+                        socket.close();
+                };
+        };
+
         const handleAcceptCall = () => {
                 if (!incomingCall?.chatId) return;
-
-                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
-                socket.onopen = () => {
-                        socket.send(JSON.stringify({ type: "accept_call" }));
-                        socket.close();
-                        navigate(`/video-call/${incomingCall.chatId}`);
-                        setIncomingCall(null);
-                };
+                sendSocketMessage("accept_call");
+                navigate(`/video-call/${incomingCall.chatId}`);
+                setIncomingCall(null);
         };
 
         const handleDeclineCall = () => {
                 if (!incomingCall?.chatId) return;
-                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
-                socket.onopen = () => {
-                        socket.send(JSON.stringify({ type: "decline_call" }));
-                        socket.close();
-                        setIncomingCall(null);
-                };
+                sendSocketMessage("decline_call");
+                setIncomingCall(null);
         };
 
         const handleStartCall = () => {
                 if (!selectedChatId || !partner || !user) return;
-                const socket = new WebSocket(getWebSocketUrl(`/ws/chat/${selectedChatId}/`));
+
+                const wsUrl = getWebSocketUrl(`/ws/chat/${selectedChatId}/`);
+                if (!wsUrl) return;
+
+                const socket = new WebSocket(wsUrl);
                 socket.onopen = () => {
-                        socket.send(
-                                JSON.stringify({
-                                        type: "start_call",
-                                        to_user_id: partner.id,
-                                        from_user_id: user.id,
-                                        from_user_name: `${user.first_name} ${user.last_name}`,
-                                        chat_id: selectedChatId,
-                                })
-                        );
+                        socket.send(JSON.stringify({
+                                type: "start_call",
+                                to_user_id: partner.id,
+                                from_user_id: user.id,
+                                from_user_name: `${user.first_name} ${user.last_name}`,
+                                chat_id: selectedChatId,
+                        }));
                         alert("Звонок отправлен!");
                         socket.close();
                 };
@@ -248,7 +270,6 @@ export default function ChatPage() {
                                 />
                         )}
 
-                        {/* Входящий звонок */}
                         {incomingCall && (
                                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                         <div className="bg-white dark:bg-gray-800 text-black dark:text-white p-6 rounded-xl shadow-lg text-center space-y-4">

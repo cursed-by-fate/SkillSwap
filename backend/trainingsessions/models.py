@@ -7,7 +7,7 @@ from skills.models import Skill
 class Session(models.Model):
     STATUS_CHOICES = (
         ("proposed", "Предложена"),
-        ("waiting", "Ожидание"),  # ← добавить это
+        ("waiting", "Ожидание"),
         ("confirmed", "Подтверждена"),
         ("completed", "Завершена"),
         ("cancelled", "Отменена"),
@@ -24,7 +24,7 @@ class Session(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     scheduled_at = models.DateTimeField(blank=True, null=True)
-    duration = models.PositiveIntegerField(blank=True, null=True)  # in minutes
+    duration = models.PositiveIntegerField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="proposed")
     meeting_link = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

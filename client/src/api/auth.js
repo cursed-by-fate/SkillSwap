@@ -1,9 +1,20 @@
 import api from "@/lib/axios";
 
-// ✅ Регистрация
-export async function register({ email, username, password, re_password }) {
+// Сохранение токенов
+function saveTokens({ access, refresh }) {
+        if (access) localStorage.setItem("access", access);
+        if (refresh) localStorage.setItem("refresh", refresh);
+}
+
+// Удаление токенов
+function clearTokens() {
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
+}
+
+// ✅ Регистрация
+export async function register({ email, username, password, re_password }) {
+        clearTokens();
 
         const response = await api.post("/auth/users/", {
                 email,
@@ -12,17 +23,10 @@ export async function register({ email, username, password, re_password }) {
                 first_name: username,
         });
 
-        const { tokens } = response.data;
+        const tokens = response.data.tokens;
+        if (tokens) saveTokens(tokens);
 
-        if (tokens) {
-                const { access, refresh } = tokens;
-                if (access && refresh) {
-                        localStorage.setItem("access", access);
-                        localStorage.setItem("refresh", refresh);
-                }
-        }
-
-        return response;
+        return fetchCurrentUser();
 }
 
 // ✅ Получение текущего пользователя
@@ -34,11 +38,7 @@ export async function fetchCurrentUser() {
 // ✅ Логин
 export async function login({ email, password }) {
         const response = await api.post("/auth/jwt/create/", { email, password });
-        const { access, refresh } = response.data;
-
-        localStorage.setItem("access", access);
-        localStorage.setItem("refresh", refresh);
-
+        saveTokens(response.data);
         return fetchCurrentUser();
 }
 
@@ -46,8 +46,12 @@ export async function login({ email, password }) {
 export async function logout() {
         const refreshToken = localStorage.getItem("refresh");
 
-        if (refreshToken) {
-                await api.post("/auth/jwt/logout/", { refresh: refreshToken });
+        try {
+                if (refreshToken) {
+                        await api.post("/auth/jwt/logout/", { refresh: refreshToken });
+                }
+        } catch (e) {
+                console.warn("Ошибка при logout:", e);
         }
 
         localStorage.removeItem("access");
@@ -57,10 +61,18 @@ export async function logout() {
 // ✅ Обновление профиля
 export async function updateProfile(formData) {
         const response = await api.patch("/users/me/", formData, {
-                headers: {
-                        "Content-Type": "multipart/form-data",
-                },
+                headers: { "Content-Type": "multipart/form-data" },
         });
         return response.data;
 }
 
+// ✅ Обновление access токена
+export async function refreshAccessToken() {
+        const refresh = localStorage.getItem("refresh");
+        if (!refresh) throw new Error("Нет refresh токена");
+
+        const response = await api.post("/auth/jwt/refresh/", { refresh });
+        const { access } = response.data;
+        localStorage.setItem("access", access);
+        return access;
+}

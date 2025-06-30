@@ -26,7 +26,7 @@ export default function VideoCall() {
         useEffect(() => {
                 const isInitiator = user?.id && partner?.id && user.id < partner.id;
                 const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-                const token = localStorage.getItem("accessToken");
+                const token = localStorage.getItem("access");
                 const socketUrl = `${protocol}://localhost:8000/ws/video/${chatId}/?token=${token}`;
 
                 socket.current = new WebSocket(socketUrl);

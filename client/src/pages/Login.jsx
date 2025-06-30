@@ -43,7 +43,7 @@ export default function Login() {
                                                 {loginStatus === "pending" ? "Входим..." : "Войти"}
                                         </button>
                                 </form>
-
+                                {/* 
                                 <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
                                         или войдите через:
                                 </div>
@@ -52,7 +52,7 @@ export default function Login() {
                                         <OAuthButton provider="Google" />
                                         <OAuthButton provider="VK" />
                                         <OAuthButton provider="GitHub" />
-                                </div>
+                                </div> */}
                         </div>
                 </div>
         );

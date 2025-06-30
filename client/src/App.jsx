@@ -43,8 +43,8 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:id" element={<UserProfile />} />
         <Route path="/search" element={<Search />} />
-        <Route path="/chat" element={<ChatPage />} /> {/* ✅ Основной чат */}
-        <Route path="/chat/:id" element={<ChatPage />} /> {/* ✅ По ID */}
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/sessions" element={<SessionsPage />} />

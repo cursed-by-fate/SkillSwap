@@ -10,7 +10,7 @@ class Review(models.Model):
         unique_together = (
             "reviewer",
             "session",
-        )  # ❗ Один отзыв от одного пользователя на одну сессию
+        )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     session = models.ForeignKey(

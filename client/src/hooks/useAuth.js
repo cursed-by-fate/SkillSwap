@@ -1,3 +1,4 @@
+// Почти без изменений
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import * as authApi from "@/api/auth";
@@ -6,7 +7,6 @@ export const useAuth = () => {
         const queryClient = useQueryClient();
         const navigate = useNavigate();
 
-        // 📌 Получение текущего пользователя
         const {
                 data: user,
                 isLoading,
@@ -19,11 +19,10 @@ export const useAuth = () => {
                 retry: false,
         });
 
-        // 🔐 Вход
         const loginMutation = useMutation({
                 mutationFn: authApi.login,
                 onSuccess: async (user) => {
-                        queryClient.setQueryData(["currentUser"], user); // ⬅️ вручную ставим после login()
+                        queryClient.setQueryData(["currentUser"], user);
                         navigate("/dashboard");
                 },
                 onError: (err) => {
@@ -31,10 +30,10 @@ export const useAuth = () => {
                 },
         });
 
-        // 🚪 Выход
         const logoutMutation = useMutation({
                 mutationFn: authApi.logout,
-                onSuccess: () => {
+                onSuccess: async () => {
+                        await queryClient.cancelQueries(); // ⛔ останови текущие
                         queryClient.removeQueries({ queryKey: ["currentUser"] });
                         navigate("/login");
                 },
@@ -43,7 +42,6 @@ export const useAuth = () => {
                 },
         });
 
-        // 🆕 Регистрация
         const registerMutation = useMutation({
                 mutationFn: authApi.register,
                 onSuccess: async () => {

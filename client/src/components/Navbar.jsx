@@ -47,19 +47,21 @@ export default function Navbar() {
                                 </Link>
 
                                 <div className="hidden md:flex items-center space-x-6">
-                                        {menuItems.map(({ label, path, icon }) => (
-                                                <Link
-                                                        key={path}
-                                                        to={path}
-                                                        className={clsx(
-                                                                "flex items-center gap-1 hover:text-blue-400 transition",
-                                                                location.pathname === path && "text-blue-400"
-                                                        )}
-                                                >
-                                                        {icon}
-                                                        {label}
-                                                </Link>
-                                        ))}
+                                        {!isLoading && user && (
+                                                menuItems.map(({ label, path, icon }) => (
+                                                        <Link
+                                                                key={path}
+                                                                to={path}
+                                                                className={clsx(
+                                                                        "flex items-center gap-1 hover:text-blue-400 transition",
+                                                                        location.pathname === path && "text-blue-400"
+                                                                )}
+                                                        >
+                                                                {icon}
+                                                                {label}
+                                                        </Link>
+                                                ))
+                                        )}
 
                                         {/* 🔔 Уведомления */}
                                         <div className="relative" id="notif-bell">

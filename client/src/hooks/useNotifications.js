@@ -18,3 +18,4 @@ export const useNotifications = () => {
 
         return { notifications, recentNotifications, unreadCount, isLoading, isError, refetch };
 };
+

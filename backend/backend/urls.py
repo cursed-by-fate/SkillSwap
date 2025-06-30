@@ -12,7 +12,7 @@ from usercalendar.views import CalendarEventViewSet
 from reviews.views import ReviewViewSet
 from notifications.views import NotificationViewSet
 
-# 📌 Все viewsets
+# Все viewsets
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
 router.register(r"skills", SkillViewSet, basename="skill")
@@ -24,7 +24,7 @@ router.register(r"calendar-events", CalendarEventViewSet, basename="calendar-eve
 router.register(r"reviews", ReviewViewSet, basename="review")
 router.register(r"notifications", NotificationViewSet, basename="notification")
 
-# 📌 Основные маршруты API
+#  Основные маршруты API
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("djoser.urls")),
@@ -33,6 +33,6 @@ urlpatterns = [
     path("api/", include(router.urls)),
 ]
 
-# 📌 Для отдачи медиафайлов (например, аватаров)
+# Для отдачи медиафайлов (например, аватаров)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
